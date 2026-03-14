@@ -88,7 +88,6 @@ const FeishuWikiSpaceNodeSchema = Type.Union([
     }),
     obj_type: Type.Union(
       [
-        Type.Literal('doc'),
         Type.Literal('sheet'),
         Type.Literal('mindnote'),
         Type.Literal('bitable'),
