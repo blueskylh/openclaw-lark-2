@@ -105,11 +105,9 @@ const FeishuWikiSpaceNodeSchema = Type.Union([
         description: 'parent_node_token',
       }),
     ),
-    node_type: Type.Optional(
-      Type.Union([Type.Literal('origin'), Type.Literal('shortcut')], {
-        description: 'node_type',
-      }),
-    ),
+    node_type: Type.Union([Type.Literal('origin'), Type.Literal('shortcut')], {
+      description: 'node_type',
+    }),
     origin_node_token: Type.Optional(
       Type.String({
         description: 'origin_node_token',
@@ -187,7 +185,7 @@ type FeishuWikiSpaceNodeParams =
       space_id: string;
       obj_type: string;
       parent_node_token?: string;
-      node_type?: 'origin' | 'shortcut';
+      node_type: 'origin' | 'shortcut';
       origin_node_token?: string;
       title?: string;
     }
@@ -301,7 +299,7 @@ export function registerFeishuWikiSpaceNodeTool(api: OpenClawPluginApi) {
             // -----------------------------------------------------------------
             case 'create': {
               log.info(
-                `create: space_id=${p.space_id}, obj_type=${p.obj_type}, parent=${p.parent_node_token ?? '(root)'}, title=${p.title ?? '(empty)'}`,
+                `create: space_id=${p.space_id}, obj_type=${p.obj_type}, parent=${p.parent_node_token ?? '(root)'}, title=${p.title ?? '(empty)'}, node_type=${p.node_type}, original_node_token=${p.origin_node_token ?? '(empty)'}`,
               );
 
               const res = await client.invoke(
