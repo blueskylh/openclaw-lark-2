@@ -954,6 +954,14 @@ export async function handleCardAction(data: unknown, cfg: ClawdbotConfig, accou
  * @param cfg - OpenClaw 配置对象（从工具注册函数的闭包中获取）
  */
 export async function handleInvokeErrorWithAutoAuth(err: unknown, cfg: ClawdbotConfig) {
+  // api.config (cfg) is channel-scoped and lacks the accounts sub-map.
+  // Use live config for all account resolution and card dispatch.
+  try {
+    cfg = LarkClient.runtime.config.loadConfig() as ClawdbotConfig;
+  } catch {
+    // runtime not yet initialised — fall back to passed config
+  }
+
   const ticket = getTicket();
 
   // --- Path 0：Owner 访问拒绝 → 直接返回友好提示 ---

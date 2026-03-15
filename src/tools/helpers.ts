@@ -81,17 +81,25 @@ export interface ToolContext {
  */
 export function createClientGetter(config: ClawdbotConfig, accountIndex = 0): ClientGetter {
   return () => {
+    // api.config may be channel-scoped (no accounts sub-map); use live config for resolution.
+    let resolveConfig = config;
+    try {
+      resolveConfig = LarkClient.runtime.config.loadConfig() as ClawdbotConfig;
+    } catch {
+      // runtime not yet initialised — fall back to passed config
+    }
+
     // 优先使用 LarkTicket 中的 accountId 进行动态账号解析
     const ticket = getTicket();
     if (ticket?.accountId) {
-      const account = getLarkAccount(config, ticket.accountId);
+      const account = getLarkAccount(resolveConfig, ticket.accountId);
       if (account.enabled && account.configured) {
         return LarkClient.fromAccount(account).sdk;
       }
     }
 
     // 回退：使用 accountIndex 指定的账号
-    const accounts = getEnabledLarkAccounts(config);
+    const accounts = getEnabledLarkAccounts(resolveConfig);
 
     if (accounts.length === 0) {
       throw new Error(
