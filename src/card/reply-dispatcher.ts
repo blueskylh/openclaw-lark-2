@@ -26,6 +26,7 @@ import { addTypingIndicator, removeTypingIndicator, type TypingIndicatorState } 
 import { resolveReplyMode, expandAutoMode, shouldUseCard } from './reply-mode';
 import { StreamingCardController } from './streaming-card-controller';
 import { UnavailableGuard } from './unavailable-guard';
+import { sendMediaLark } from '../messaging/outbound/deliver';
 import type { CreateFeishuReplyDispatcherParams, FeishuReplyDispatcherResult } from './reply-dispatcher-types';
 
 const log = larkLogger('card/reply-dispatcher');
@@ -197,8 +198,11 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
       }
 
       const text = payload.text ?? '';
-      if (!text.trim()) {
-        log.debug('deliver: empty text, skipping');
+      const payloadMediaUrls = payload.mediaUrls?.length ? payload.mediaUrls
+        : payload.mediaUrl ? [payload.mediaUrl]
+        : [];
+      if (!text.trim() && payloadMediaUrls.length === 0) {
+        log.debug('deliver: empty text and no media, skipping');
         return;
       }
 
@@ -251,6 +255,26 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
           } catch (err) {
             if (staticGuard?.terminate('deliver.textChunk', err)) return;
             throw err;
+          }
+        }
+
+        // ---- Static media delivery ----
+        // Forward any media URLs from the payload to the media send chain.
+        for (const mediaUrl of payloadMediaUrls) {
+          if (!mediaUrl?.trim()) continue;
+          try {
+            log.info('deliver: sending media via static path', { mediaUrl: mediaUrl.slice(0, 80) });
+            await sendMediaLark({
+              cfg: payload.cfg,
+              to: payload.to,
+              mediaUrl,
+              mediaLocalRoots: payload.mediaLocalRoots,
+              accountId: payload.accountId,
+              replyToId: payload.replyToId,
+              threadId: payload.threadId,
+            });
+          } catch (mediaErr) {
+            log.error('deliver: static media send failed', { error: String(mediaErr) });
           }
         }
       }

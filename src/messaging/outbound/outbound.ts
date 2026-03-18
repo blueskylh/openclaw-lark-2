@@ -155,6 +155,7 @@ function resolveFeishuSendContext(params: {
 // ---------------------------------------------------------------------------
 
 export const feishuOutbound: ChannelOutboundAdapter = {
+  supportsMedia: true,
   deliveryMode: 'direct',
 
   chunker: (text, limit) => LarkClient.runtime.channel.text.chunkMarkdownText(text, limit),
