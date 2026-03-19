@@ -263,7 +263,6 @@ export function formatScopeDescription(
 }
 
 export function toInAppWebUrl(targetUrl: string, brand?: LarkBrand): string {
-  const encoded = encodeURIComponent(targetUrl);
   const lkMeta = encodeURIComponent(
     JSON.stringify({
       'page-meta': {
@@ -272,9 +271,12 @@ export function toInAppWebUrl(targetUrl: string, brand?: LarkBrand): string {
       },
     }),
   );
+  const separator = targetUrl.includes('?') ? '&' : '?';
+  const fullUrl = `${targetUrl}${separator}lk_meta=${lkMeta}`;
+  const encoded = encodeURIComponent(fullUrl);
   return (
     `${applinkDomain(brand)}/client/web_url/open` +
-    `?mode=sidebar-semi&max_width=800&reload=false&url=${encoded}&lk_meta=${lkMeta}`
+    `?mode=sidebar-semi&max_width=800&reload=false&url=${encoded}`
   );
 }
 
