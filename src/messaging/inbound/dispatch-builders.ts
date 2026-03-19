@@ -139,7 +139,7 @@ export function buildInboundPayload(
     MessageSid: opts.messageSid,
     ReplyToBody: opts.replyToBody,
     InboundHistory: opts.inboundHistory,
-    Timestamp: Date.now(),
+    Timestamp: dc.ctx.createTime ?? Date.now(),
     WasMentioned: opts.wasMentioned,
     CommandAuthorized: dc.commandAuthorized,
     OriginatingChannel: 'feishu' as const,
