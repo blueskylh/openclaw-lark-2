@@ -232,7 +232,7 @@ function checkGroupGate(params: {
       historyEntry: {
         sender: ctx.senderId,
         body: `${ctx.senderName ?? ctx.senderId}: ${ctx.content}`,
-        timestamp: Date.now(),
+        timestamp: ctx.createTime ?? Date.now(),
         messageId: ctx.messageId,
       },
     };
