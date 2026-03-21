@@ -43,6 +43,7 @@ import { LarkClient } from '../core/lark-client';
 import { createCardEntity, sendCardByCardId, updateCardKitCardForAuth } from '../card/cardkit';
 import { executeAuthorize } from './oauth';
 import { formatLarkError, json } from './oapi/helpers';
+import { getResolvedConfig } from './helpers';
 import { OwnerAccessDeniedError } from '../core/owner-policy';
 import { enqueueFeishuChatTask } from '../channel/chat-queue';
 import { handleFeishuMessage } from '../messaging/inbound/handler';
@@ -956,11 +957,7 @@ export async function handleCardAction(data: unknown, cfg: ClawdbotConfig, accou
 export async function handleInvokeErrorWithAutoAuth(err: unknown, cfg: ClawdbotConfig) {
   // api.config (cfg) is channel-scoped and lacks the accounts sub-map.
   // Use live config for all account resolution and card dispatch.
-  try {
-    cfg = LarkClient.runtime.config.loadConfig() as ClawdbotConfig;
-  } catch {
-    // runtime not yet initialised — fall back to passed config
-  }
+  cfg = getResolvedConfig(cfg);
 
   const ticket = getTicket();
 
