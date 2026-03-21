@@ -26,6 +26,7 @@ import { addTypingIndicator, removeTypingIndicator, type TypingIndicatorState } 
 import { resolveReplyMode, expandAutoMode, shouldUseCard } from './reply-mode';
 import { StreamingCardController } from './streaming-card-controller';
 import { UnavailableGuard } from './unavailable-guard';
+import { sendMediaLark } from '../messaging/outbound/deliver';
 import type { CreateFeishuReplyDispatcherParams, FeishuReplyDispatcherResult } from './reply-dispatcher-types';
 
 const log = larkLogger('card/reply-dispatcher');
@@ -197,8 +198,11 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
       }
 
       const text = payload.text ?? '';
-      if (!text.trim()) {
-        log.debug('deliver: empty text, skipping');
+      const payloadMediaUrls = payload.mediaUrls?.length ? payload.mediaUrls
+        : payload.mediaUrl ? [payload.mediaUrl]
+        : [];
+      if (!text.trim() && payloadMediaUrls.length === 0) {
+        log.debug('deliver: empty text and no media, skipping');
         return;
       }
 
@@ -215,43 +219,64 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
         log.warn('deliver: card creation failed, falling back to static delivery');
       }
 
-      // ---- Static delivery ----
-      if (shouldUseCard(text)) {
-        const chunks = core.channel.text.chunkTextWithMode(text, textChunkLimit, chunkMode);
-        log.info('deliver: sending card chunks', { count: chunks.length, chatId });
-        for (const chunk of chunks) {
-          try {
-            await sendMarkdownCardFeishu({
-              cfg,
-              to: chatId,
-              text: chunk,
-              replyToMessageId,
-              replyInThread,
-              accountId,
-            });
-          } catch (err) {
-            if (staticGuard?.terminate('deliver.cardChunk', err)) return;
-            throw err;
+      // ---- Static text delivery ----
+      if (text.trim()) {
+        if (shouldUseCard(text)) {
+          const chunks = core.channel.text.chunkTextWithMode(text, textChunkLimit, chunkMode);
+          log.info('deliver: sending card chunks', { count: chunks.length, chatId });
+          for (const chunk of chunks) {
+            try {
+              await sendMarkdownCardFeishu({
+                cfg,
+                to: chatId,
+                text: chunk,
+                replyToMessageId,
+                replyInThread,
+                accountId,
+              });
+            } catch (err) {
+              if (staticGuard?.terminate('deliver.cardChunk', err)) return;
+              throw err;
+            }
+          }
+        } else {
+          const converted = core.channel.text.convertMarkdownTables(text, tableMode);
+          const chunks = core.channel.text.chunkTextWithMode(converted, textChunkLimit, chunkMode);
+          log.info('deliver: sending text chunks', { count: chunks.length, chatId });
+          for (const chunk of chunks) {
+            try {
+              await sendMessageFeishu({
+                cfg,
+                to: chatId,
+                text: chunk,
+                replyToMessageId,
+                replyInThread,
+                accountId,
+              });
+            } catch (err) {
+              if (staticGuard?.terminate('deliver.textChunk', err)) return;
+              throw err;
+            }
           }
         }
-      } else {
-        const converted = core.channel.text.convertMarkdownTables(text, tableMode);
-        const chunks = core.channel.text.chunkTextWithMode(converted, textChunkLimit, chunkMode);
-        log.info('deliver: sending text chunks', { count: chunks.length, chatId });
-        for (const chunk of chunks) {
-          try {
-            await sendMessageFeishu({
-              cfg,
-              to: chatId,
-              text: chunk,
-              replyToMessageId,
-              replyInThread,
-              accountId,
-            });
-          } catch (err) {
-            if (staticGuard?.terminate('deliver.textChunk', err)) return;
-            throw err;
-          }
+      }
+
+      // ---- Static media delivery ----
+      for (const mediaUrl of payloadMediaUrls) {
+        if (!mediaUrl?.trim()) continue;
+        try {
+          log.info('deliver: sending media via static path', { mediaUrl: mediaUrl.slice(0, 80) });
+          await sendMediaLark({
+            cfg,
+            to: chatId,
+            mediaUrl,
+            accountId,
+            replyToMessageId,
+            replyInThread,
+          });
+        } catch (mediaErr) {
+          if (staticGuard?.terminate('deliver.media', mediaErr)) return;
+          log.error('deliver: static media send failed', { error: String(mediaErr) });
         }
       }
     },
