@@ -258,24 +258,23 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
           }
         }
 
-        // ---- Static media delivery ----
-        // Forward any media URLs from the payload to the media send chain.
-        for (const mediaUrl of payloadMediaUrls) {
-          if (!mediaUrl?.trim()) continue;
-          try {
-            log.info('deliver: sending media via static path', { mediaUrl: mediaUrl.slice(0, 80) });
-            await sendMediaLark({
-              cfg: payload.cfg,
-              to: payload.to,
-              mediaUrl,
-              mediaLocalRoots: payload.mediaLocalRoots,
-              accountId: payload.accountId,
-              replyToId: payload.replyToId,
-              threadId: payload.threadId,
-            });
-          } catch (mediaErr) {
-            log.error('deliver: static media send failed', { error: String(mediaErr) });
-          }
+      }
+
+      // ---- Static media delivery ----
+      for (const mediaUrl of payloadMediaUrls) {
+        if (!mediaUrl?.trim()) continue;
+        try {
+          log.info('deliver: sending media via static path', { mediaUrl: mediaUrl.slice(0, 80) });
+          await sendMediaLark({
+            cfg,
+            to: chatId,
+            mediaUrl,
+            accountId,
+            replyToMessageId,
+            replyInThread,
+          });
+        } catch (mediaErr) {
+          log.error('deliver: static media send failed', { error: String(mediaErr) });
         }
       }
     },
