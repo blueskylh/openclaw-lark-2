@@ -19,7 +19,8 @@ import * as Lark from '@larksuiteoapi/node-sdk';
 import type { ClawdbotConfig, PluginRuntime } from 'openclaw/plugin-sdk';
 import type { LarkBrand, LarkAccount, FeishuProbeResult } from './types';
 import { getLarkAccount } from './accounts';
-import { clearUserNameCache } from '../messaging/inbound/user-name-cache';
+// NOTE: clearUserNameCache is lazy-imported in clearCache() to break a
+// circular dependency with user-name-cache.ts (which imports LarkClient).
 import { clearChatInfoCache } from './chat-info-cache';
 import { getUserAgent } from './version';
 import { larkLogger } from './lark-logger';
