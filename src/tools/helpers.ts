@@ -136,7 +136,7 @@ export function createClientGetter(config: ClawdbotConfig, accountIndex = 0): Cl
  * ```
  */
 export function getFirstAccount(config: ClawdbotConfig): LarkAccount {
-  // api.config may be channel-scoped (no accounts sub-map); use live config for resolution.
+  // `config` may be stale after a hot-reload; use live config for account resolution.
   const resolveConfig = getResolvedConfig(config);
 
   // 优先使用 LarkTicket 中的 accountId
