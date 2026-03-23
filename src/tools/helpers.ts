@@ -11,7 +11,7 @@ import type { OpenClawPluginApi } from 'openclaw/plugin-sdk';
 import type { ClawdbotConfig } from 'openclaw/plugin-sdk';
 import type { Client as LarkSdkClient } from '@larksuiteoapi/node-sdk';
 import { getEnabledLarkAccounts, getLarkAccount } from '../core/accounts';
-import { LarkClient } from '../core/lark-client';
+import { LarkClient, getResolvedConfig } from '../core/lark-client';
 import type { LarkAccount } from '../core/types';
 import { getTicket } from '../core/lark-ticket';
 import { ToolClient, createToolClient } from '../core/tool-client';
@@ -45,6 +45,14 @@ export interface ToolContext {
   /** 工具日志记录器 */
   log: ReturnType<typeof createToolLogger>;
 }
+
+// ---------------------------------------------------------------------------
+// 配置解析
+// ---------------------------------------------------------------------------
+
+// getResolvedConfig is defined in lark-client.ts (core layer) so that both
+// tool-client.ts and this file can use it without a circular dependency.
+export { getResolvedConfig } from '../core/lark-client';
 
 // ---------------------------------------------------------------------------
 // 客户端管理
@@ -81,17 +89,20 @@ export interface ToolContext {
  */
 export function createClientGetter(config: ClawdbotConfig, accountIndex = 0): ClientGetter {
   return () => {
+    // `config` may be stale after a hot-reload; use live config for account resolution.
+    const resolveConfig = getResolvedConfig(config);
+
     // 优先使用 LarkTicket 中的 accountId 进行动态账号解析
     const ticket = getTicket();
     if (ticket?.accountId) {
-      const account = getLarkAccount(config, ticket.accountId);
+      const account = getLarkAccount(resolveConfig, ticket.accountId);
       if (account.enabled && account.configured) {
         return LarkClient.fromAccount(account).sdk;
       }
     }
 
     // 回退：使用 accountIndex 指定的账号
-    const accounts = getEnabledLarkAccounts(config);
+    const accounts = getEnabledLarkAccounts(resolveConfig);
 
     if (accounts.length === 0) {
       throw new Error(
@@ -125,17 +136,20 @@ export function createClientGetter(config: ClawdbotConfig, accountIndex = 0): Cl
  * ```
  */
 export function getFirstAccount(config: ClawdbotConfig): LarkAccount {
+  // `config` may be stale after a hot-reload; use live config for account resolution.
+  const resolveConfig = getResolvedConfig(config);
+
   // 优先使用 LarkTicket 中的 accountId
   const ticket = getTicket();
   if (ticket?.accountId) {
-    const account = getLarkAccount(config, ticket.accountId);
+    const account = getLarkAccount(resolveConfig, ticket.accountId);
     if (account.enabled && account.configured) {
       return account;
     }
   }
 
   // 回退到第一个启用的账号
-  const accounts = getEnabledLarkAccounts(config);
+  const accounts = getEnabledLarkAccounts(resolveConfig);
 
   if (accounts.length === 0) {
     throw new Error(

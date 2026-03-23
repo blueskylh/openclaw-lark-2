@@ -43,6 +43,7 @@ import { LarkClient } from '../core/lark-client';
 import { createCardEntity, sendCardByCardId, updateCardKitCardForAuth } from '../card/cardkit';
 import { executeAuthorize } from './oauth';
 import { formatLarkError, json } from './oapi/helpers';
+import { getResolvedConfig } from './helpers';
 import { OwnerAccessDeniedError } from '../core/owner-policy';
 import { enqueueFeishuChatTask } from '../channel/chat-queue';
 import { handleFeishuMessage } from '../messaging/inbound/handler';
@@ -954,6 +955,10 @@ export async function handleCardAction(data: unknown, cfg: ClawdbotConfig, accou
  * @param cfg - OpenClaw 配置对象（从工具注册函数的闭包中获取）
  */
 export async function handleInvokeErrorWithAutoAuth(err: unknown, cfg: ClawdbotConfig) {
+  // `cfg` is the closure-captured snapshot from plugin registration and may be
+  // stale after a hot-reload.  Use getResolvedConfig() to always get the live config.
+  cfg = getResolvedConfig(cfg);
+
   const ticket = getTicket();
 
   // --- Path 0：Owner 访问拒绝 → 直接返回友好提示 ---
