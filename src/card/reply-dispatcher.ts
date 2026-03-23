@@ -13,10 +13,10 @@
 
 import {
   createReplyPrefixContext,
-  createTypingCallbacks,
   logTypingFailure,
   type ReplyPayload,
 } from 'openclaw/plugin-sdk';
+import { createTypingCallbacks } from 'openclaw/plugin-sdk/channel-runtime';
 import { createAccountScopedConfig, getLarkAccount } from '../core/accounts';
 import { resolveFooterConfig } from '../core/footer-config';
 import { LarkClient } from '../core/lark-client';

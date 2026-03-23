@@ -19,7 +19,9 @@ import type {
   ChannelThreadingToolContext,
   OpenClawConfig,
 } from 'openclaw/plugin-sdk';
-import { extractToolSend, jsonResult, readStringParam, readReactionParams } from 'openclaw/plugin-sdk';
+import { extractToolSend } from 'openclaw/plugin-sdk/tool-send';
+import { readStringParam } from 'openclaw/plugin-sdk';
+import { jsonResult, readReactionParams } from '../../core/sdk-compat';
 
 import { addReactionFeishu, removeReactionFeishu, listReactionsFeishu } from './reactions';
 import { sendTextLark, sendCardLark } from './deliver';
@@ -162,6 +164,18 @@ export const feishuMessageActions: ChannelMessageActionAdapter = {
     const accounts = getEnabledLarkAccounts(cfg);
     if (accounts.length === 0) return [];
     return Array.from(SUPPORTED_ACTIONS);
+  },
+
+  describeMessageTool: ({ cfg }) => {
+    const accounts = getEnabledLarkAccounts(cfg);
+    if (accounts.length === 0) {
+      return { actions: [], capabilities: [], schema: null };
+    }
+    return {
+      actions: Array.from(SUPPORTED_ACTIONS),
+      capabilities: ['cards'],
+      schema: null,
+    };
   },
 
   supportsAction: ({ action }) => SUPPORTED_ACTIONS.has(action),

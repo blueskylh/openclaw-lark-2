@@ -14,14 +14,13 @@
  *   7. Agent dispatch        → dispatch.ts
  */
 
-import type { ClawdbotConfig, RuntimeEnv } from 'openclaw/plugin-sdk';
+import type { ClawdbotConfig, RuntimeEnv, HistoryEntry } from 'openclaw/plugin-sdk';
 import {
   recordPendingHistoryEntryIfEnabled,
   DEFAULT_GROUP_HISTORY_LIMIT,
-  resolveSenderCommandAuthorization,
-  isNormalizedSenderAllowed,
-  type HistoryEntry,
 } from 'openclaw/plugin-sdk';
+import { resolveSenderCommandAuthorization } from 'openclaw/plugin-sdk/zalouser';
+import { isNormalizedSenderAllowed } from 'openclaw/plugin-sdk/allow-from';
 import type { FeishuMessageEvent } from '../types';
 import { getLarkAccount } from '../../core/accounts';
 import { LarkClient } from '../../core/lark-client';
