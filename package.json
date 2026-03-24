@@ -6,11 +6,11 @@
   "bin": {
     "openclaw-lark": "bin/openclaw-lark.js"
   },
-  "main": "index.js",
+  "main": "index.mjs",
   "files": [
     "bin/",
-    "index.js",
-    "index.d.ts",
+    "index.mjs",
+    "index.d.mts",
     "skills/",
     "openclaw.plugin.json",
     "README.md",
@@ -48,7 +48,7 @@
   },
   "openclaw": {
     "extensions": [
-      "./index.js"
+      "./index.mjs"
     ],
     "channel": {
       "id": "openclaw-lark",

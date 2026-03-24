@@ -1,5 +1,5 @@
-import { A as getEnabledLarkAccounts, M as getLarkAccountIds, O as createAccountScopedConfig, T as getTicket, c as AppScopeCheckFailedError, j as getLarkAccount, k as getDefaultLarkAccountId, w as larkLogger, x as getUserAgent, y as LarkClient } from "./user-name-cache-Bw1VQ2E0.mjs";
-import { $ as nonBotMentions, A as wwwDomain, B as getAppGrantedScopes, C as formatDiagReportCli, D as resolveAnyEnabledToolsConfig, E as traceByMessageId, F as getMessageFeishu, G as buildMentionedCardContent, H as sendCardFeishu, I as parseMessageEvent, J as formatMentionAllForCard, K as buildMentionedMessage, L as buildConvertContextFromItem, M as filterSensitiveScopes, N as getStoredToken, O as mcpDomain, P as checkMessageGate, Q as mentionedBot, R as convertMessageContent, S as analyzeTrace, T as runDiagnosis, U as sendMessageFeishu, V as editMessageFeishu, W as updateCardFeishu, X as formatMentionForCard, Y as formatMentionAllForText, Z as formatMentionForText, _ as createToolContext, a as triggerOnboarding, at as formatLarkError, b as registerTool, c as StringEnum, ct as sendImageLark, d as json, dt as uploadImageLark, et as resolveFeishuGroupToolPolicy, f as parseTimeToRFC3339, ft as validateLocalMediaRoots, g as handleInvokeErrorWithAutoAuth, gt as resolveReceiveIdType, h as unixTimestampToISO8601, ht as parseFeishuRouteTarget, i as isMessageExpired, it as assertLarkOk$2, j as probeFeishu, k as openPlatformDomain, l as convertTimeRange, lt as uploadAndSendMediaLark, m as parseTimeToTimestampMs, mt as normalizeFeishuTarget, nt as sendMediaLark, o as executeAuthorize, ot as sendAudioLark, p as parseTimeToTimestamp, pt as looksLikeFeishuId, q as extractMessageBody, r as handleFeishuReaction, rt as sendTextLark, s as registerFeishuOAuthTool, st as sendFileLark, t as monitorFeishuProvider, tt as sendCardLark, u as isInvokeError, ut as uploadFileLark, v as formatToolResult, w as formatTraceOutput, x as registerCommands, y as getFirstAccount, z as extractMentionOpenId } from "./monitor-CvIfHTzy.mjs";
+import { A as getDefaultLarkAccountId, E as getTicket, M as getLarkAccount, N as getLarkAccountIds, S as getUserAgent, T as larkLogger, c as AppScopeCheckFailedError, j as getEnabledLarkAccounts, k as createAccountScopedConfig, y as LarkClient } from "./user-name-cache-C_AK4ymA.mjs";
+import { $ as mentionedBot, A as openPlatformDomain, B as extractMentionOpenId, C as analyzeTrace, D as traceByMessageId, E as runDiagnosis, F as checkMessageGate, G as updateCardFeishu, H as editMessageFeishu, I as getMessageFeishu, J as extractMessageBody, K as buildMentionedCardContent, L as parseMessageEvent, M as probeFeishu, N as filterSensitiveScopes, O as resolveAnyEnabledToolsConfig, P as getStoredToken, Q as formatMentionForText, R as buildConvertContextFromItem, S as registerCommands, T as formatTraceOutput, U as sendCardFeishu, V as getAppGrantedScopes, W as sendMessageFeishu, X as formatMentionAllForText, Y as formatMentionAllForCard, Z as formatMentionForCard, _ as handleInvokeErrorWithAutoAuth, _t as resolveReceiveIdType, a as registerAskUserQuestionTool, at as assertLarkOk$2, b as getFirstAccount, c as registerFeishuOAuthTool, ct as sendFileLark, d as isInvokeError, dt as uploadFileLark, et as nonBotMentions, f as json, ft as uploadImageLark, g as unixTimestampToISO8601, gt as parseFeishuRouteTarget, h as parseTimeToTimestampMs, ht as normalizeFeishuTarget, i as isMessageExpired, it as sendTextLark, j as wwwDomain, k as mcpDomain, l as StringEnum, lt as sendImageLark, m as parseTimeToTimestamp, mt as looksLikeFeishuId, nt as sendCardLark, o as triggerOnboarding, ot as formatLarkError, p as parseTimeToRFC3339, pt as validateLocalMediaRoots, q as buildMentionedMessage, r as handleFeishuReaction, rt as sendMediaLark, s as executeAuthorize, st as sendAudioLark, t as monitorFeishuProvider, tt as resolveFeishuGroupToolPolicy, u as convertTimeRange, ut as uploadAndSendMediaLark, v as createToolContext, w as formatDiagReportCli, x as registerTool, y as formatToolResult, z as convertMessageContent } from "./monitor-D0kgtX1u.mjs";
 import { DEFAULT_ACCOUNT_ID } from "openclaw/plugin-sdk/account-id";
 import { PAIRING_APPROVED_MESSAGE } from "openclaw/plugin-sdk/channel-status";
 import * as path$1 from "node:path";
@@ -1344,7 +1344,7 @@ const feishuPlugin = {
 	},
 	gateway: {
 		startAccount: async (ctx) => {
-			const { monitorFeishuProvider } = await import("./monitor-CvIfHTzy.mjs").then((n) => n.n);
+			const { monitorFeishuProvider } = await import("./monitor-D0kgtX1u.mjs").then((n) => n.n);
 			const account = getLarkAccount(ctx.cfg, ctx.accountId);
 			const port = account.config?.webhookPort ?? null;
 			ctx.setStatus({
@@ -1549,6 +1549,29 @@ const FeishuCalendarEventSchema = Type.Union([
 		calendar_id: Type.Optional(Type.String({ description: "Calendar ID (optional; primary calendar used if omitted)" })),
 		page_size: Type.Optional(Type.Number({ description: "每页数量" })),
 		page_token: Type.Optional(Type.String({ description: "分页标记" }))
+	}),
+	Type.Object({
+		action: Type.Literal("create_leave"),
+		user_id: Type.String({ description: "用户 ID（open_id）" }),
+		start_time: Type.String({ description: "请假开始时间（ISO 8601 / RFC 3339 格式，含时区），例如 '2024-01-01T00:00:00+08:00'。全天请假填日期 '2024-01-01'。" }),
+		end_time: Type.String({ description: "请假结束时间（格式同 start_time）。全天请假填日期（不含）'2024-01-02'。" }),
+		title: Type.Optional(Type.String({ description: "请假日程标题（默认：请假）" })),
+		is_all_day: Type.Optional(Type.Boolean({ description: "是否全天请假（默认 false）" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("delete_leave"),
+		timeoff_event_id: Type.String({ description: "请假日程 ID（由 create_leave 返回）" }),
+		user_id: Type.String({ description: "用户 ID（open_id）" }),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
 	})
 ]);
 function normalizeCalendarTimeValue(value) {
@@ -1910,6 +1933,42 @@ function registerFeishuCalendarEventTool(api) {
 							page_token: data?.page_token
 						});
 					}
+					case "create_leave": {
+						log.info(`create_leave: user_id=${p.user_id}, start=${p.start_time}, end=${p.end_time}`);
+						const startTs = parseTimeToTimestamp(p.start_time);
+						const endTs = parseTimeToTimestamp(p.end_time);
+						if (!startTs || !endTs) return json({
+							error: "时间格式错误，请使用 ISO 8601 / RFC 3339 格式（含时区），例如 '2024-01-01T00:00:00+08:00'。全天请假请使用日期格式 '2024-01-01'。",
+							received_start: p.start_time,
+							received_end: p.end_time
+						});
+						const res = await client.invoke("feishu_calendar_event.create_leave", (sdk, opts) => sdk.calendar.timeoffEvent.create({
+							params: { user_id_type: p.user_id_type || "open_id" },
+							data: {
+								user_id: p.user_id,
+								timezone: "Asia/Shanghai",
+								start_time: String(startTs),
+								end_time: String(endTs),
+								title: p.title || "请假",
+								is_all_day: p.is_all_day ?? false
+							}
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						const leaveEvent = res.data?.timeoff_event;
+						log.info(`create_leave: created timeoff_event_id=${leaveEvent?.timeoff_event_id}`);
+						return json({ timeoff_event: leaveEvent });
+					}
+					case "delete_leave":
+						log.info(`delete_leave: timeoff_event_id=${p.timeoff_event_id}, user_id=${p.user_id}`);
+						assertLarkOk$2(await client.invoke("feishu_calendar_event.delete_leave", (sdk, opts) => sdk.calendar.timeoffEvent.delete({
+							path: { timeoff_event_id: p.timeoff_event_id },
+							params: {
+								user_id_type: p.user_id_type || "open_id",
+								user_id: p.user_id
+							}
+						}, opts), { as: "user" }));
+						log.info(`delete_leave: deleted timeoff_event_id=${p.timeoff_event_id}`);
+						return json({ success: true });
 				}
 			} catch (err) {
 				return await handleInvokeErrorWithAutoAuth(err, cfg);
@@ -2174,6 +2233,98 @@ const FeishuTaskTaskSchema = Type.Union([
 			"union_id",
 			"user_id"
 		]))
+	}),
+	Type.Object({
+		action: Type.Literal("delete"),
+		task_guid: Type.String({ description: "要删除的任务 GUID" }),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		]))
+	}),
+	Type.Object({
+		action: Type.Literal("add_members"),
+		task_guid: Type.String({ description: "任务 GUID" }),
+		members: Type.Array(Type.Object({
+			id: Type.String({ description: "成员 open_id" }),
+			role: Type.Optional(StringEnum(["assignee", "follower"]))
+		}), { description: "要添加的成员列表" }),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		]))
+	}),
+	Type.Object({
+		action: Type.Literal("remove_members"),
+		task_guid: Type.String({ description: "任务 GUID" }),
+		members: Type.Array(Type.Object({
+			id: Type.String({ description: "成员 open_id" }),
+			role: Type.Optional(StringEnum(["assignee", "follower"]))
+		}), { description: "要移除的成员列表" }),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		]))
+	}),
+	Type.Object({
+		action: Type.Literal("add_tasklist"),
+		task_guid: Type.String({ description: "任务 GUID" }),
+		tasklist_guid: Type.String({ description: "要加入的清单 GUID" }),
+		section_guid: Type.Optional(Type.String({ description: "清单中的自定义分组 GUID（不填则加入默认分组）" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		]))
+	}),
+	Type.Object({
+		action: Type.Literal("remove_tasklist"),
+		task_guid: Type.String({ description: "任务 GUID" }),
+		tasklist_guid: Type.String({ description: "要移出的清单 GUID" }),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		]))
+	}),
+	Type.Object({
+		action: Type.Literal("add_reminder"),
+		task_guid: Type.String({ description: "任务 GUID" }),
+		relative_fire_minute: Type.Integer({ description: "相对截止时间的提醒分钟数。只允许非负整数：0=截止时提醒，正数=截止后N分钟提醒（如 30 表示截止后30分钟）。每个任务最多1个提醒。" }),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		]))
+	}),
+	Type.Object({
+		action: Type.Literal("remove_reminder"),
+		task_guid: Type.String({ description: "任务 GUID" }),
+		reminder_id: Type.String({ description: "提醒 ID（可通过 get action 查看任务详情中的 reminders 字段获取）" }),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		]))
+	}),
+	Type.Object({
+		action: Type.Literal("add_dependency"),
+		task_guid: Type.String({ description: "任务 GUID" }),
+		dependencies: Type.Array(Type.Object({
+			type: StringEnum(["prev", "next"], { description: "依赖类型：prev=前置任务（本任务依赖它），next=后置任务（它依赖本任务）" }),
+			task_guid: Type.String({ description: "依赖的任务 GUID" })
+		}), { description: "要添加的依赖关系列表" })
+	}),
+	Type.Object({
+		action: Type.Literal("remove_dependency"),
+		task_guid: Type.String({ description: "任务 GUID" }),
+		dependencies: Type.Array(Type.Object({
+			type: StringEnum(["prev", "next"], { description: "依赖类型：prev=前置任务，next=后置任务" }),
+			task_guid: Type.String({ description: "依赖的任务 GUID" })
+		}), { description: "要移除的依赖关系列表" })
 	})
 ]);
 function registerFeishuTaskTaskTool(api) {
@@ -2183,7 +2334,7 @@ function registerFeishuTaskTaskTool(api) {
 	registerTool(api, {
 		name: "feishu_task_task",
 		label: "Feishu Task Management",
-		description: "【以用户身份】飞书任务管理工具。用于创建、查询、更新任务。Actions: create（创建任务）, get（获取任务详情）, list（查询任务列表，仅返回我负责的任务）, patch（更新任务）。时间参数使用ISO 8601 / RFC 3339 格式（包含时区），例如 '2024-01-01T00:00:00+08:00'。",
+		description: "【以用户身份】飞书任务管理工具。Actions: create（创建任务）, get（获取任务详情）, list（查询任务列表）, patch（更新任务）, delete（删除任务）, add_members（添加成员）, remove_members（移除成员）, add_tasklist（加入清单）, remove_tasklist（移出清单）, add_reminder（添加提醒）, remove_reminder（移除提醒）, add_dependency（添加任务依赖）, remove_dependency（移除任务依赖）。时间参数使用ISO 8601 / RFC 3339 格式（包含时区），例如 '2024-01-01T00:00:00+08:00'。",
 		parameters: FeishuTaskTaskSchema,
 		async execute(_toolCallId, params) {
 			const p = params;
@@ -2308,6 +2459,96 @@ function registerFeishuTaskTaskTool(api) {
 						log.info(`patch: task ${p.task_guid} updated`);
 						return json({ task: res.data?.task });
 					}
+					case "delete":
+						log.info(`delete: task_guid=${p.task_guid}`);
+						assertLarkOk$2(await client.invoke("feishu_task_task.delete", (sdk, opts) => sdk.task.v2.task.delete({ path: { task_guid: p.task_guid } }, opts), { as: "user" }));
+						log.info(`delete: task ${p.task_guid} deleted`);
+						return json({ success: true });
+					case "add_members": {
+						log.info(`add_members: task_guid=${p.task_guid}, count=${p.members.length}`);
+						const res = await client.invoke("feishu_task_task.add_members", (sdk, opts) => sdk.task.v2.task.addMembers({
+							path: { task_guid: p.task_guid },
+							params: { user_id_type: p.user_id_type || "open_id" },
+							data: { members: p.members.map((m) => ({
+								id: m.id,
+								type: "user",
+								role: m.role || "assignee"
+							})) }
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						return json({ task: res.data?.task });
+					}
+					case "remove_members": {
+						log.info(`remove_members: task_guid=${p.task_guid}, count=${p.members.length}`);
+						const res = await client.invoke("feishu_task_task.remove_members", (sdk, opts) => sdk.task.v2.task.removeMembers({
+							path: { task_guid: p.task_guid },
+							params: { user_id_type: p.user_id_type || "open_id" },
+							data: { members: p.members.map((m) => ({
+								id: m.id,
+								type: "user",
+								role: m.role || "assignee"
+							})) }
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						return json({ task: res.data?.task });
+					}
+					case "add_tasklist": {
+						log.info(`add_tasklist: task_guid=${p.task_guid}, tasklist_guid=${p.tasklist_guid}`);
+						const res = await client.invoke("feishu_task_task.add_tasklist", (sdk, opts) => sdk.task.v2.task.addTasklist({
+							path: { task_guid: p.task_guid },
+							params: { user_id_type: p.user_id_type || "open_id" },
+							data: {
+								tasklist_guid: p.tasklist_guid,
+								section_guid: p.section_guid
+							}
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						return json({ task: res.data?.task });
+					}
+					case "remove_tasklist":
+						log.info(`remove_tasklist: task_guid=${p.task_guid}, tasklist_guid=${p.tasklist_guid}`);
+						assertLarkOk$2(await client.invoke("feishu_task_task.remove_tasklist", (sdk, opts) => sdk.task.v2.task.removeTasklist({
+							path: { task_guid: p.task_guid },
+							params: { user_id_type: p.user_id_type || "open_id" },
+							data: { tasklist_guid: p.tasklist_guid }
+						}, opts), { as: "user" }));
+						return json({ success: true });
+					case "add_reminder": {
+						log.info(`add_reminder: task_guid=${p.task_guid}, relative_fire_minute=${p.relative_fire_minute}`);
+						const res = await client.invoke("feishu_task_task.add_reminder", (sdk, opts) => sdk.task.v2.task.addReminders({
+							path: { task_guid: p.task_guid },
+							params: { user_id_type: p.user_id_type || "open_id" },
+							data: { reminders: [{ relative_fire_minute: p.relative_fire_minute }] }
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						return json({ task: res.data?.task });
+					}
+					case "remove_reminder": {
+						log.info(`remove_reminder: task_guid=${p.task_guid}, reminder_id=${p.reminder_id}`);
+						const res = await client.invoke("feishu_task_task.remove_reminder", (sdk, opts) => sdk.task.v2.task.removeReminders({
+							path: { task_guid: p.task_guid },
+							params: { user_id_type: p.user_id_type || "open_id" },
+							data: { reminder_ids: [p.reminder_id] }
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						return json({ task: res.data?.task });
+					}
+					case "add_dependency": {
+						log.info(`add_dependency: task_guid=${p.task_guid}, count=${p.dependencies.length}`);
+						const res = await client.invoke("feishu_task_task.add_dependency", (sdk, opts) => sdk.task.v2.task.addDependencies({
+							path: { task_guid: p.task_guid },
+							data: { dependencies: p.dependencies }
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						return json({ dependencies: res.data?.dependencies });
+					}
+					case "remove_dependency":
+						log.info(`remove_dependency: task_guid=${p.task_guid}, count=${p.dependencies.length}`);
+						assertLarkOk$2(await client.invoke("feishu_task_task.remove_dependency", (sdk, opts) => sdk.task.v2.task.removeDependencies({
+							path: { task_guid: p.task_guid },
+							data: { dependencies: p.dependencies }
+						}, opts), { as: "user" }));
+						return json({ success: true });
 				}
 			} catch (err) {
 				return await handleInvokeErrorWithAutoAuth(err, cfg);
@@ -2662,6 +2903,521 @@ function registerFeishuTaskSubtaskTool(api) {
 			}
 		}
 	}, { name: "feishu_task_subtask" });
+}
+//#endregion
+//#region src/tools/oapi/task/attachment.ts
+const FeishuTaskAttachmentSchema = Type.Union([
+	Type.Object({
+		action: Type.Literal("list"),
+		resource_type: StringEnum(["task"], { description: "附件归属的资源类型，目前只支持 task" }),
+		resource_id: Type.String({ description: "附件归属的资源 ID（任务 GUID）" }),
+		page_size: Type.Optional(Type.Integer({
+			description: "分页大小（默认 50，最大 50）",
+			minimum: 1,
+			maximum: 50
+		})),
+		page_token: Type.Optional(Type.String({ description: "分页标记，首次请求无需填写" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("get"),
+		attachment_guid: Type.String({ description: "附件 GUID" }),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("delete"),
+		attachment_guid: Type.String({ description: "要删除的附件 GUID" })
+	})
+]);
+function registerFeishuTaskAttachmentTool(api) {
+	if (!api.config) return;
+	const cfg = api.config;
+	const { toolClient, log } = createToolContext(api, "feishu_task_attachment");
+	registerTool(api, {
+		name: "feishu_task_attachment",
+		label: "Feishu Task Attachment",
+		description: "飞书任务附件管理工具。Actions: list（列取任务附件）, get（获取附件详情及临时下载链接）, delete（删除附件）。",
+		parameters: FeishuTaskAttachmentSchema,
+		async execute(_toolCallId, params) {
+			const p = params;
+			try {
+				const client = toolClient();
+				switch (p.action) {
+					case "list": {
+						log.info(`list: resource_type=${p.resource_type}, resource_id=${p.resource_id}`);
+						const res = await client.invoke("feishu_task_attachment.list", (sdk, opts) => sdk.task.v2.attachment.list({ params: {
+							resource_type: p.resource_type,
+							resource_id: p.resource_id,
+							page_size: p.page_size,
+							page_token: p.page_token,
+							user_id_type: p.user_id_type || "open_id"
+						} }, opts), { as: "user" });
+						assertLarkOk$2(res);
+						const data = res.data;
+						log.info(`list: found ${data?.items?.length ?? 0} attachments`);
+						return json({
+							items: data?.items,
+							has_more: data?.has_more ?? false,
+							page_token: data?.page_token
+						});
+					}
+					case "get": {
+						log.info(`get: attachment_guid=${p.attachment_guid}`);
+						const res = await client.invoke("feishu_task_attachment.get", (sdk, opts) => sdk.task.v2.attachment.get({
+							path: { attachment_guid: p.attachment_guid },
+							params: { user_id_type: p.user_id_type || "open_id" }
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						log.info(`get: retrieved attachment ${p.attachment_guid}`);
+						return json({ attachment: res.data?.attachment });
+					}
+					case "delete":
+						log.info(`delete: attachment_guid=${p.attachment_guid}`);
+						assertLarkOk$2(await client.invoke("feishu_task_attachment.delete", (sdk, opts) => sdk.task.v2.attachment.delete({ path: { attachment_guid: p.attachment_guid } }, opts), { as: "user" }));
+						log.info(`delete: deleted attachment ${p.attachment_guid}`);
+						return json({ success: true });
+				}
+			} catch (err) {
+				return await handleInvokeErrorWithAutoAuth(err, cfg);
+			}
+		}
+	}, { name: "feishu_task_attachment" });
+}
+//#endregion
+//#region src/tools/oapi/task/custom-field.ts
+const FeishuTaskCustomFieldSchema = Type.Union([
+	Type.Object({
+		action: Type.Literal("create"),
+		name: Type.String({ description: "自定义字段名称" }),
+		type: StringEnum([
+			"number",
+			"member",
+			"datetime",
+			"single_select",
+			"multi_select",
+			"text"
+		], { description: "字段类型" }),
+		resource_type: StringEnum(["tasklist"], { description: "关联的资源类型，目前只支持 tasklist" }),
+		resource_id: Type.String({ description: "关联的资源 ID（清单 GUID）" }),
+		number_setting: Type.Optional(Type.Object({
+			format: Type.Optional(Type.String({ description: "数字格式，如 normal/percentage/cny/usd/custom" })),
+			decimal_count: Type.Optional(Type.Integer({ description: "小数位数（0-6）" })),
+			separator: Type.Optional(Type.String({ description: "千分位分隔符，如 none/thousand" })),
+			custom_symbol: Type.Optional(Type.String({ description: "自定义符号" })),
+			custom_symbol_position: Type.Optional(Type.String({ description: "符号位置 left/right" }))
+		}, { description: "number 类型设置" })),
+		member_setting: Type.Optional(Type.Object({ multi: Type.Optional(Type.Boolean({ description: "是否支持多选" })) }, { description: "member 类型设置" })),
+		datetime_setting: Type.Optional(Type.Object({ format: Type.Optional(Type.String({ description: "日期格式，如 yyyy/MM/dd" })) }, { description: "datetime 类型设置" })),
+		single_select_setting: Type.Optional(Type.Object({ options: Type.Optional(Type.Array(Type.Object({
+			name: Type.String({ description: "选项名称" }),
+			color_index: Type.Optional(Type.Integer({ description: "颜色索引（0-24）" }))
+		}))) }, { description: "single_select 类型设置" })),
+		multi_select_setting: Type.Optional(Type.Object({ options: Type.Optional(Type.Array(Type.Object({
+			name: Type.String({ description: "选项名称" }),
+			color_index: Type.Optional(Type.Integer({ description: "颜色索引（0-24）" }))
+		}))) }, { description: "multi_select 类型设置" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("update"),
+		custom_field_guid: Type.String({ description: "自定义字段 GUID" }),
+		update_fields: Type.Array(Type.String(), { description: "要更新的字段名列表，如 [\"name\", \"number_setting\"]" }),
+		name: Type.Optional(Type.String({ description: "新名称" })),
+		number_setting: Type.Optional(Type.Object({}, {
+			additionalProperties: true,
+			description: "数字类型设置"
+		})),
+		member_setting: Type.Optional(Type.Object({}, {
+			additionalProperties: true,
+			description: "成员类型设置"
+		})),
+		datetime_setting: Type.Optional(Type.Object({}, {
+			additionalProperties: true,
+			description: "日期类型设置"
+		})),
+		single_select_setting: Type.Optional(Type.Object({}, {
+			additionalProperties: true,
+			description: "单选类型设置"
+		})),
+		multi_select_setting: Type.Optional(Type.Object({}, {
+			additionalProperties: true,
+			description: "多选类型设置"
+		})),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("get"),
+		custom_field_guid: Type.String({ description: "自定义字段 GUID" }),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("list"),
+		resource_type: StringEnum(["tasklist"], { description: "资源类型，目前只支持 tasklist" }),
+		resource_id: Type.String({ description: "资源 ID（清单 GUID）" }),
+		page_size: Type.Optional(Type.Integer({
+			description: "分页大小（默认 50）",
+			minimum: 1,
+			maximum: 50
+		})),
+		page_token: Type.Optional(Type.String({ description: "分页标记" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("add_to_resource"),
+		custom_field_guid: Type.String({ description: "自定义字段 GUID" }),
+		resource_type: StringEnum(["tasklist"], { description: "资源类型，目前只支持 tasklist" }),
+		resource_id: Type.String({ description: "资源 ID（清单 GUID）" })
+	}),
+	Type.Object({
+		action: Type.Literal("create_option"),
+		custom_field_guid: Type.String({ description: "自定义字段 GUID（需为 single_select 或 multi_select 类型）" }),
+		name: Type.String({ description: "选项名称" }),
+		color_index: Type.Optional(Type.Integer({
+			description: "颜色索引（0-24）",
+			minimum: 0,
+			maximum: 24
+		})),
+		insert_before: Type.Optional(Type.String({ description: "插入到此选项 GUID 之前（不填则追加到末尾）" })),
+		insert_after: Type.Optional(Type.String({ description: "插入到此选项 GUID 之后（不填则追加到末尾）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("update_option"),
+		custom_field_guid: Type.String({ description: "自定义字段 GUID" }),
+		option_guid: Type.String({ description: "选项 GUID" }),
+		name: Type.Optional(Type.String({ description: "新的选项名称" })),
+		color_index: Type.Optional(Type.Integer({
+			description: "新的颜色索引（0-24）",
+			minimum: 0,
+			maximum: 24
+		})),
+		is_hidden: Type.Optional(Type.Boolean({ description: "是否隐藏该选项" })),
+		insert_before: Type.Optional(Type.String({ description: "移动到此选项 GUID 之前" })),
+		insert_after: Type.Optional(Type.String({ description: "移动到此选项 GUID 之后" }))
+	}),
+	Type.Object({
+		action: Type.Literal("remove_from_resource"),
+		custom_field_guid: Type.String({ description: "自定义字段 GUID" }),
+		resource_type: StringEnum(["tasklist"], { description: "资源类型，目前只支持 tasklist" }),
+		resource_id: Type.String({ description: "资源 ID（清单 GUID）" })
+	})
+]);
+function registerFeishuTaskCustomFieldTool(api) {
+	if (!api.config) return;
+	const cfg = api.config;
+	const { toolClient, log } = createToolContext(api, "feishu_task_custom_field");
+	registerTool(api, {
+		name: "feishu_task_custom_field",
+		label: "Feishu Task Custom Field",
+		description: "飞书任务自定义字段管理工具。Actions: create（创建）, update（更新）, get（获取详情）, list（列取清单下的自定义字段）, add_to_resource（加入清单）, remove_from_resource（从清单移除）, create_option（创建选项，用于单/多选字段）, update_option（更新选项）。",
+		parameters: FeishuTaskCustomFieldSchema,
+		async execute(_toolCallId, params) {
+			const p = params;
+			try {
+				const client = toolClient();
+				switch (p.action) {
+					case "create": {
+						log.info(`create: name=${p.name}, type=${p.type}, resource_id=${p.resource_id}`);
+						const body = {
+							name: p.name,
+							type: p.type,
+							resource_type: p.resource_type,
+							resource_id: p.resource_id
+						};
+						if (p.number_setting) body.number_setting = p.number_setting;
+						if (p.member_setting) body.member_setting = p.member_setting;
+						if (p.datetime_setting) body.datetime_setting = p.datetime_setting;
+						if (p.single_select_setting) body.single_select_setting = p.single_select_setting;
+						if (p.multi_select_setting) body.multi_select_setting = p.multi_select_setting;
+						const res = await client.invoke("feishu_task_custom_field.create", (sdk, opts) => sdk.task.v2.customField.create({
+							params: { user_id_type: p.user_id_type || "open_id" },
+							data: body
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						log.info(`create: created custom field ${res.data?.custom_field?.guid}`);
+						return json({ custom_field: res.data?.custom_field });
+					}
+					case "update": {
+						log.info(`update: custom_field_guid=${p.custom_field_guid}, update_fields=${p.update_fields.join(",")}`);
+						const customFieldData = {};
+						if (p.name !== void 0) customFieldData.name = p.name;
+						if (p.number_setting !== void 0) customFieldData.number_setting = p.number_setting;
+						if (p.member_setting !== void 0) customFieldData.member_setting = p.member_setting;
+						if (p.datetime_setting !== void 0) customFieldData.datetime_setting = p.datetime_setting;
+						if (p.single_select_setting !== void 0) customFieldData.single_select_setting = p.single_select_setting;
+						if (p.multi_select_setting !== void 0) customFieldData.multi_select_setting = p.multi_select_setting;
+						const res = await client.invoke("feishu_task_custom_field.update", (sdk, opts) => sdk.task.v2.customField.patch({
+							path: { custom_field_guid: p.custom_field_guid },
+							params: { user_id_type: p.user_id_type || "open_id" },
+							data: {
+								custom_field: customFieldData,
+								update_fields: p.update_fields
+							}
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						log.info(`update: updated custom field ${p.custom_field_guid}`);
+						return json({ custom_field: res.data?.custom_field });
+					}
+					case "get": {
+						log.info(`get: custom_field_guid=${p.custom_field_guid}`);
+						const res = await client.invoke("feishu_task_custom_field.get", (sdk, opts) => sdk.task.v2.customField.get({
+							path: { custom_field_guid: p.custom_field_guid },
+							params: { user_id_type: p.user_id_type || "open_id" }
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						log.info(`get: retrieved custom field ${p.custom_field_guid}`);
+						return json({ custom_field: res.data?.custom_field });
+					}
+					case "list": {
+						log.info(`list: resource_type=${p.resource_type}, resource_id=${p.resource_id}`);
+						const res = await client.invoke("feishu_task_custom_field.list", (sdk, opts) => sdk.task.v2.customField.list({ params: {
+							resource_type: p.resource_type,
+							resource_id: p.resource_id,
+							page_size: p.page_size,
+							page_token: p.page_token,
+							user_id_type: p.user_id_type || "open_id"
+						} }, opts), { as: "user" });
+						assertLarkOk$2(res);
+						const data = res.data;
+						log.info(`list: found ${data?.items?.length ?? 0} custom fields`);
+						return json({
+							items: data?.items,
+							has_more: data?.has_more ?? false,
+							page_token: data?.page_token
+						});
+					}
+					case "add_to_resource":
+						log.info(`add_to_resource: custom_field_guid=${p.custom_field_guid}, resource_id=${p.resource_id}`);
+						assertLarkOk$2(await client.invoke("feishu_task_custom_field.add_to_resource", (sdk, opts) => sdk.task.v2.customField.add({
+							path: { custom_field_guid: p.custom_field_guid },
+							data: {
+								resource_type: p.resource_type,
+								resource_id: p.resource_id
+							}
+						}, opts), { as: "user" }));
+						log.info(`add_to_resource: added custom field ${p.custom_field_guid} to resource ${p.resource_id}`);
+						return json({ success: true });
+					case "remove_from_resource":
+						log.info(`remove_from_resource: custom_field_guid=${p.custom_field_guid}, resource_id=${p.resource_id}`);
+						assertLarkOk$2(await client.invoke("feishu_task_custom_field.remove_from_resource", (sdk, opts) => sdk.task.v2.customField.remove({
+							path: { custom_field_guid: p.custom_field_guid },
+							data: {
+								resource_type: p.resource_type,
+								resource_id: p.resource_id
+							}
+						}, opts), { as: "user" }));
+						log.info(`remove_from_resource: removed custom field ${p.custom_field_guid} from resource ${p.resource_id}`);
+						return json({ success: true });
+					case "create_option": {
+						log.info(`create_option: custom_field_guid=${p.custom_field_guid}, name=${p.name}`);
+						const body = { name: p.name };
+						if (p.color_index !== void 0) body.color_index = p.color_index;
+						if (p.insert_before) body.insert_before = p.insert_before;
+						if (p.insert_after) body.insert_after = p.insert_after;
+						const res = await client.invoke("feishu_task_custom_field.create_option", (sdk, opts) => sdk.task.v2.customFieldOption.create({
+							path: { custom_field_guid: p.custom_field_guid },
+							data: body
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						log.info(`create_option: created option for field ${p.custom_field_guid}`);
+						return json({ option: res.data?.option });
+					}
+					case "update_option": {
+						log.info(`update_option: custom_field_guid=${p.custom_field_guid}, option_guid=${p.option_guid}`);
+						const body = {};
+						if (p.name !== void 0) body.name = p.name;
+						if (p.color_index !== void 0) body.color_index = p.color_index;
+						if (p.is_hidden !== void 0) body.is_hidden = p.is_hidden;
+						if (p.insert_before) body.insert_before = p.insert_before;
+						if (p.insert_after) body.insert_after = p.insert_after;
+						const res = await client.invoke("feishu_task_custom_field.update_option", (sdk, opts) => sdk.task.v2.customFieldOption.patch({
+							path: {
+								custom_field_guid: p.custom_field_guid,
+								option_guid: p.option_guid
+							},
+							data: { option: body }
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						log.info(`update_option: updated option ${p.option_guid}`);
+						return json({ option: res.data?.option });
+					}
+				}
+			} catch (err) {
+				return await handleInvokeErrorWithAutoAuth(err, cfg);
+			}
+		}
+	}, { name: "feishu_task_custom_field" });
+}
+//#endregion
+//#region src/tools/oapi/task/section.ts
+const FeishuTaskSectionSchema = Type.Union([
+	Type.Object({
+		action: Type.Literal("create"),
+		name: Type.String({ description: "分组名称" }),
+		resource_type: StringEnum(["tasklist", "my_tasks"], { description: "分组所属资源类型：tasklist（清单分组），my_tasks（我的任务分组）" }),
+		resource_id: Type.Optional(Type.String({ description: "资源 ID（resource_type=tasklist 时填清单 GUID；resource_type=my_tasks 时不填或填 my）" })),
+		insert_before: Type.Optional(Type.String({ description: "插入到此分组 GUID 之前（不填则追加到末尾）" })),
+		insert_after: Type.Optional(Type.String({ description: "插入到此分组 GUID 之后（不填则追加到末尾）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("get"),
+		section_guid: Type.String({ description: "分组 GUID" }),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("list"),
+		resource_type: StringEnum(["tasklist", "my_tasks"], { description: "分组所属资源类型：tasklist（清单分组），my_tasks（我的任务分组）" }),
+		resource_id: Type.Optional(Type.String({ description: "资源 ID（resource_type=tasklist 时填清单 GUID；my_tasks 时不填）" })),
+		page_size: Type.Optional(Type.Integer({
+			description: "分页大小（默认 50，最大 100）",
+			minimum: 1,
+			maximum: 100
+		})),
+		page_token: Type.Optional(Type.String({ description: "分页标记" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("patch"),
+		section_guid: Type.String({ description: "分组 GUID" }),
+		name: Type.Optional(Type.String({ description: "新的分组名称" })),
+		insert_before: Type.Optional(Type.String({ description: "移动到此分组 GUID 之前" })),
+		insert_after: Type.Optional(Type.String({ description: "移动到此分组 GUID 之后" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("delete"),
+		section_guid: Type.String({ description: "要删除的分组 GUID" })
+	})
+]);
+function registerFeishuTaskSectionTool(api) {
+	if (!api.config) return;
+	const cfg = api.config;
+	const { toolClient, log } = createToolContext(api, "feishu_task_section");
+	registerTool(api, {
+		name: "feishu_task_section",
+		label: "Feishu Task Section",
+		description: "飞书任务自定义分组管理工具。清单内的分组用于对任务进行分类整理。Actions: create（创建分组）, get（获取分组详情）, list（列取分组列表）, patch（更新分组）, delete（删除分组）。",
+		parameters: FeishuTaskSectionSchema,
+		async execute(_toolCallId, params) {
+			const p = params;
+			try {
+				const client = toolClient();
+				switch (p.action) {
+					case "create": {
+						log.info(`create: name=${p.name}, resource_type=${p.resource_type}`);
+						const body = {
+							name: p.name,
+							resource_type: p.resource_type
+						};
+						if (p.resource_id) body.resource_id = p.resource_id;
+						if (p.insert_before) body.insert_before = p.insert_before;
+						if (p.insert_after) body.insert_after = p.insert_after;
+						const res = await client.invoke("feishu_task_section.create", (sdk, opts) => sdk.task.v2.section.create({ data: body }, opts), { as: "user" });
+						assertLarkOk$2(res);
+						log.info(`create: section created: guid=${res.data?.section?.guid}`);
+						return json({ section: res.data?.section });
+					}
+					case "get": {
+						log.info(`get: section_guid=${p.section_guid}`);
+						const res = await client.invoke("feishu_task_section.get", (sdk, opts) => sdk.task.v2.section.get({
+							path: { section_guid: p.section_guid },
+							params: { user_id_type: p.user_id_type || "open_id" }
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						return json({ section: res.data?.section });
+					}
+					case "list": {
+						log.info(`list: resource_type=${p.resource_type}, resource_id=${p.resource_id}`);
+						const res = await client.invoke("feishu_task_section.list", (sdk, opts) => sdk.task.v2.section.list({ params: {
+							resource_type: p.resource_type,
+							resource_id: p.resource_id,
+							page_size: p.page_size,
+							page_token: p.page_token,
+							user_id_type: p.user_id_type || "open_id"
+						} }, opts), { as: "user" });
+						assertLarkOk$2(res);
+						const data = res.data;
+						log.info(`list: found ${data?.items?.length ?? 0} sections`);
+						return json({
+							items: data?.items,
+							has_more: data?.has_more ?? false,
+							page_token: data?.page_token
+						});
+					}
+					case "patch": {
+						log.info(`patch: section_guid=${p.section_guid}`);
+						const body = {};
+						const update_fields = [];
+						if (p.name !== void 0) {
+							body.name = p.name;
+							update_fields.push("name");
+						}
+						if (p.insert_before !== void 0) {
+							body.insert_before = p.insert_before;
+							update_fields.push("insert_before");
+						}
+						if (p.insert_after !== void 0) {
+							body.insert_after = p.insert_after;
+							update_fields.push("insert_after");
+						}
+						if (update_fields.length === 0) return json({ error: "No fields to update" });
+						const res = await client.invoke("feishu_task_section.patch", (sdk, opts) => sdk.task.v2.section.patch({
+							path: { section_guid: p.section_guid },
+							params: { user_id_type: p.user_id_type || "open_id" },
+							data: {
+								section: body,
+								update_fields
+							}
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						return json({ section: res.data?.section });
+					}
+					case "delete":
+						log.info(`delete: section_guid=${p.section_guid}`);
+						assertLarkOk$2(await client.invoke("feishu_task_section.delete", (sdk, opts) => sdk.task.v2.section.delete({ path: { section_guid: p.section_guid } }, opts), { as: "user" }));
+						log.info(`delete: deleted section ${p.section_guid}`);
+						return json({ success: true });
+				}
+			} catch (err) {
+				return await handleInvokeErrorWithAutoAuth(err, cfg);
+			}
+		}
+	}, { name: "feishu_task_section" });
 }
 //#endregion
 //#region src/tools/oapi/bitable/app.ts
@@ -4492,6 +5248,13 @@ const FeishuWikiSpaceSchema = Type.Union([
 		action: Type.Literal("create"),
 		name: Type.Optional(Type.String({ description: "知识空间名称" })),
 		description: Type.Optional(Type.String({ description: "知识空间描述" }))
+	}),
+	Type.Object({
+		action: Type.Literal("update_setting"),
+		space_id: Type.String({ description: "知识空间 ID" }),
+		create_setting: Type.Optional(Type.String({ description: "谁可以创建空间节点：admin（仅管理员）, member（所有成员）" })),
+		security_setting: Type.Optional(Type.String({ description: "谁可以导出文档：admin（仅管理员）, member（所有成员）" })),
+		comment_setting: Type.Optional(Type.String({ description: "谁可以评论：admin（仅管理员）, member（所有成员）" }))
 	})
 ]);
 function registerFeishuWikiSpaceTool(api) {
@@ -4501,7 +5264,7 @@ function registerFeishuWikiSpaceTool(api) {
 	return registerTool(api, {
 		name: "feishu_wiki_space",
 		label: "Feishu Wiki Spaces",
-		description: "飞书知识空间管理工具。当用户要求查看知识库列表、获取知识库信息、创建知识库时使用。Actions: list（列出知识空间）, get（获取知识空间信息）, create（创建知识空间）。【重要】space_id 可以从浏览器 URL 中获取，或通过 list 接口获取。【重要】知识空间（Space）是知识库的基本组成单位，包含多个具有层级关系的文档节点。",
+		description: "飞书知识空间管理工具。当用户要求查看知识库列表、获取知识库信息、创建知识库时使用。Actions: list（列出知识空间）, get（获取知识空间信息）, create（创建知识空间）, update_setting（更新空间设置）。【重要】space_id 可以从浏览器 URL 中获取，或通过 list 接口获取。【重要】知识空间（Space）是知识库的基本组成单位，包含多个具有层级关系的文档节点。",
 		parameters: FeishuWikiSpaceSchema,
 		async execute(_toolCallId, params) {
 			const p = params;
@@ -4539,6 +5302,20 @@ function registerFeishuWikiSpaceTool(api) {
 						assertLarkOk$2(res);
 						log.info(`create: created space_id=${(res.data?.space)?.space_id}`);
 						return json({ space: res.data?.space });
+					}
+					case "update_setting": {
+						log.info(`update_setting: space_id=${p.space_id}`);
+						const setting = {};
+						if (p.create_setting !== void 0) setting.create_setting = p.create_setting;
+						if (p.security_setting !== void 0) setting.security_setting = p.security_setting;
+						if (p.comment_setting !== void 0) setting.comment_setting = p.comment_setting;
+						const res = await client.invoke("feishu_wiki_space.update_setting", (sdk, opts) => sdk.wiki.spaceSetting.update({
+							path: { space_id: p.space_id },
+							data: setting
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						log.info(`update_setting: updated settings for space ${p.space_id}`);
+						return json({ setting: res.data?.setting });
 					}
 				}
 			} catch (err) {
@@ -4603,6 +5380,22 @@ const FeishuWikiSpaceNodeSchema = Type.Union([
 		target_space_id: Type.Optional(Type.String({ description: "target_space_id" })),
 		target_parent_token: Type.Optional(Type.String({ description: "target_parent_token" })),
 		title: Type.Optional(Type.String({ description: "title" }))
+	}),
+	Type.Object({
+		action: Type.Literal("move_docs_to_wiki"),
+		space_id: Type.String({ description: "目标知识空间 ID" }),
+		parent_wiki_token: Type.Optional(Type.String({ description: "目标父节点 token（不填则移到根节点）" })),
+		obj_type: StringEnum([
+			"doc",
+			"sheet",
+			"bitable",
+			"mindnote",
+			"file",
+			"docx",
+			"slides"
+		], { description: "文档类型" }),
+		obj_token: Type.String({ description: "云文档 token" }),
+		apply: Type.Optional(Type.Boolean({ description: "是否申请移动（true=仅申请，等待所有人同意；false=强制移动，需要所有者权限）。默认 false。" }))
 	})
 ]);
 function registerFeishuWikiSpaceNodeTool(api) {
@@ -4612,7 +5405,7 @@ function registerFeishuWikiSpaceNodeTool(api) {
 	return registerTool(api, {
 		name: "feishu_wiki_space_node",
 		label: "Feishu Wiki Space Nodes",
-		description: "飞书知识库节点管理工具。操作：list（列表）、get（获取）、create（创建）、move（移动）、copy（复制）。节点是知识库中的文档，包括 doc、bitable(多维表表格)、sheet(电子表格) 等类型。node_token 是节点的唯一标识符，obj_token 是实际文档的 token。可通过 get 操作将 wiki 类型的 node_token 转换为实际文档的 obj_token。",
+		description: "飞书知识库节点管理工具。操作：list（列表）、get（获取）、create（创建）、move（移动）、copy（复制）、move_docs_to_wiki（将云文档移入知识空间）。节点是知识库中的文档，包括 doc、bitable(多维表表格)、sheet(电子表格) 等类型。node_token 是节点的唯一标识符，obj_token 是实际文档的 token。可通过 get 操作将 wiki 类型的 node_token 转换为实际文档的 obj_token。",
 		parameters: FeishuWikiSpaceNodeSchema,
 		async execute(_toolCallId, params) {
 			const p = params;
@@ -4693,6 +5486,24 @@ function registerFeishuWikiSpaceNodeTool(api) {
 						assertLarkOk$2(res);
 						log.info(`copy: copied to node_token=${(res.data?.node)?.node_token}`);
 						return json({ node: res.data?.node });
+					}
+					case "move_docs_to_wiki": {
+						log.info(`move_docs_to_wiki: space_id=${p.space_id}, obj_type=${p.obj_type}, obj_token=${p.obj_token}`);
+						const res = await client.invoke("feishu_wiki_space_node.move_docs_to_wiki", (sdk, opts) => sdk.wiki.task.moveDocsToWiki({ data: {
+							space_id: p.space_id,
+							parent_wiki_token: p.parent_wiki_token,
+							obj_type: p.obj_type,
+							obj_token: p.obj_token,
+							apply: p.apply ?? false
+						} }, opts), { as: "user" });
+						assertLarkOk$2(res);
+						const data = res.data;
+						log.info(`move_docs_to_wiki: task_id=${data?.task_id}, wiki_token=${data?.wiki_token}`);
+						return json({
+							wiki_token: data?.wiki_token,
+							task_id: data?.task_id,
+							apply: data?.apply
+						});
 					}
 				}
 			} catch (err) {
@@ -5351,29 +6162,309 @@ function registerFeishuSheetsTools(api) {
 	if (registerFeishuSheetTool(api)) api.logger.info?.("feishu_sheets: Registered feishu_sheet");
 }
 //#endregion
+//#region src/tools/oapi/okr/okr.ts
+const FeishuOkrSchema = Type.Union([
+	Type.Object({
+		action: Type.Literal("list_periods"),
+		page_token: Type.Optional(Type.String({ description: "分页标记" })),
+		page_size: Type.Optional(Type.Integer({
+			description: "分页大小（默认 10）",
+			minimum: 1
+		}))
+	}),
+	Type.Object({
+		action: Type.Literal("list"),
+		user_id: Type.Optional(Type.String({ description: "目标用户 ID（不填则查询自己，需要传 me 或实际 open_id）" })),
+		offset: Type.Optional(Type.Integer({
+			description: "列表偏移（默认 0）",
+			minimum: 0
+		})),
+		limit: Type.Optional(Type.Integer({
+			description: "返回数量（0-10，默认 5）",
+			minimum: 1,
+			maximum: 10
+		})),
+		period_ids: Type.Optional(Type.Array(Type.String(), { description: "按周期 ID 过滤（最多 10 个，可通过 list_periods 获取）" })),
+		lang: Type.Optional(StringEnum(["zh_cn", "en_us"], { description: "语言（默认 zh_cn）" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("get"),
+		okr_ids: Type.Array(Type.String(), { description: "OKR ID 列表（最多 10 个，可通过 list action 获取）" }),
+		lang: Type.Optional(StringEnum(["zh_cn", "en_us"], { description: "语言（默认 zh_cn）" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("add_progress"),
+		target_id: Type.String({ description: "目标 ID（O 的 ID 或 KR 的 ID，可通过 list/get action 获取）" }),
+		target_type: Type.Union([Type.Literal(2), Type.Literal(3)], { description: "目标类型：2=O（Objective），3=KR（Key Result）" }),
+		content_text: Type.String({ description: "进展内容纯文本（AI 自动生成填写）" }),
+		source_title: Type.Optional(Type.String({ description: "进展来源名称（默认：OpenClaw AI）" })),
+		source_url: Type.Optional(Type.String({ description: "进展来源链接（默认：https://openclaw.ai）" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("update_progress"),
+		progress_id: Type.String({ description: "进展记录 ID" }),
+		content_text: Type.String({ description: "更新后的进展内容纯文本" }),
+		source_title: Type.Optional(Type.String({ description: "进展来源名称" })),
+		source_url: Type.Optional(Type.String({ description: "进展来源链接" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("get_progress"),
+		progress_id: Type.String({ description: "进展记录 ID" }),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("delete_progress"),
+		progress_id: Type.String({ description: "进展记录 ID" })
+	})
+]);
+function buildContentBlock(text) {
+	return { blocks: [{
+		type: "paragraph",
+		paragraph: { elements: [{
+			type: "textRun",
+			textRun: { text }
+		}] }
+	}] };
+}
+function registerFeishuOkrTool(api) {
+	if (!api.config) return;
+	const cfg = api.config;
+	const { toolClient, log } = createToolContext(api, "feishu_okr");
+	registerTool(api, {
+		name: "feishu_okr",
+		label: "Feishu OKR",
+		description: "飞书 OKR 管理工具。Actions: list_periods（获取周期列表）, list（获取我的 OKR 列表）, get（批量获取 OKR 详情）, add_progress（添加进展记录）, update_progress（更新进展）, get_progress（获取进展详情）, delete_progress（删除进展）。",
+		parameters: FeishuOkrSchema,
+		async execute(_toolCallId, params) {
+			const p = params;
+			try {
+				const client = toolClient();
+				switch (p.action) {
+					case "list_periods": {
+						log.info(`list_periods: page_size=${p.page_size ?? 10}`);
+						const res = await client.invoke("feishu_okr.list_periods", (sdk, opts) => sdk.okr.period.list({ params: {
+							page_token: p.page_token,
+							page_size: p.page_size
+						} }, opts), { as: "user" });
+						assertLarkOk$2(res);
+						const data = res.data;
+						log.info(`list_periods: found ${data?.items?.length ?? 0} periods`);
+						return json({
+							items: data?.items,
+							has_more: data?.has_more ?? false,
+							page_token: data?.page_token
+						});
+					}
+					case "list": {
+						const userId = p.user_id || "me";
+						log.info(`list: user_id=${userId}, offset=${p.offset ?? 0}, limit=${p.limit ?? 5}`);
+						const res = await client.invoke("feishu_okr.list", (sdk, opts) => sdk.okr.userOkr.list({
+							path: { user_id: userId },
+							params: {
+								user_id_type: p.user_id_type || "open_id",
+								offset: String(p.offset ?? 0),
+								limit: String(p.limit ?? 5),
+								lang: p.lang || "zh_cn",
+								period_ids: p.period_ids
+							}
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						const data = res.data;
+						log.info(`list: found ${data?.okr_list?.length ?? 0} OKRs`);
+						return json({
+							okr_list: data?.okr_list,
+							total: data?.total
+						});
+					}
+					case "get": {
+						log.info(`get: okr_ids=${p.okr_ids.join(",")}`);
+						const res = await client.invoke("feishu_okr.get", (sdk, opts) => sdk.okr.okr.batchGet({ params: {
+							okr_ids: p.okr_ids,
+							user_id_type: p.user_id_type || "open_id",
+							lang: p.lang || "zh_cn"
+						} }, opts), { as: "user" });
+						assertLarkOk$2(res);
+						const data = res.data;
+						log.info(`get: retrieved ${data?.okr_list?.length ?? 0} OKRs`);
+						return json({ okr_list: data?.okr_list });
+					}
+					case "add_progress": {
+						log.info(`add_progress: target_id=${p.target_id}, target_type=${p.target_type}`);
+						const res = await client.invoke("feishu_okr.add_progress", (sdk, opts) => sdk.okr.progressRecord.create({
+							params: { user_id_type: p.user_id_type || "open_id" },
+							data: {
+								source_title: p.source_title || "OpenClaw AI",
+								source_url: p.source_url || "https://openclaw.ai",
+								target_id: p.target_id,
+								target_type: p.target_type,
+								content: buildContentBlock(p.content_text)
+							}
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						const record = res.data?.progress_record;
+						log.info(`add_progress: created progress_id=${record?.id}`);
+						return json({ progress_record: record });
+					}
+					case "update_progress": {
+						log.info(`update_progress: progress_id=${p.progress_id}`);
+						const res = await client.invoke("feishu_okr.update_progress", (sdk, opts) => sdk.okr.progressRecord.update({
+							path: { progress_id: p.progress_id },
+							params: { user_id_type: p.user_id_type || "open_id" },
+							data: {
+								source_title: p.source_title || "OpenClaw AI",
+								source_url: p.source_url || "https://openclaw.ai",
+								content: buildContentBlock(p.content_text)
+							}
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						const record = res.data?.progress_record;
+						log.info(`update_progress: updated progress_id=${p.progress_id}`);
+						return json({ progress_record: record });
+					}
+					case "get_progress": {
+						log.info(`get_progress: progress_id=${p.progress_id}`);
+						const res = await client.invoke("feishu_okr.get_progress", (sdk, opts) => sdk.okr.progressRecord.get({
+							path: { progress_id: p.progress_id },
+							params: { user_id_type: p.user_id_type || "open_id" }
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						log.info(`get_progress: retrieved progress_id=${p.progress_id}`);
+						return json({ progress_record: res.data?.progress_record });
+					}
+					case "delete_progress":
+						log.info(`delete_progress: progress_id=${p.progress_id}`);
+						assertLarkOk$2(await client.invoke("feishu_okr.delete_progress", (sdk, opts) => sdk.okr.progressRecord.delete({ path: { progress_id: p.progress_id } }, opts), { as: "user" }));
+						log.info(`delete_progress: deleted progress_id=${p.progress_id}`);
+						return json({ success: true });
+				}
+			} catch (err) {
+				return await handleInvokeErrorWithAutoAuth(err, cfg);
+			}
+		}
+	}, { name: "feishu_okr" });
+}
+//#endregion
+//#region src/tools/oapi/okr/index.ts
+function registerFeishuOkrTools(api) {
+	if (!api.config) return;
+	registerFeishuOkrTool(api);
+	api.logger.info?.("feishu_okr: Registered feishu_okr");
+}
+//#endregion
 //#region src/tools/oapi/chat/chat.ts
-const FeishuChatSchema = Type.Union([Type.Object({
-	action: Type.Literal("search"),
-	query: Type.String({ description: "搜索关键词（必填）。支持匹配群名称、群成员名称。支持多语种、拼音、前缀等模糊搜索。" }),
-	page_size: Type.Optional(Type.Integer({
-		description: "分页大小（默认20）",
-		minimum: 1
-	})),
-	page_token: Type.Optional(Type.String({ description: "分页标记。首次请求无需填写" })),
-	user_id_type: Type.Optional(StringEnum([
-		"open_id",
-		"union_id",
-		"user_id"
-	], { description: "用户 ID 类型（默认 open_id）" }))
-}), Type.Object({
-	action: Type.Literal("get"),
-	chat_id: Type.String({ description: "群 ID（格式如 oc_xxx）" }),
-	user_id_type: Type.Optional(StringEnum([
-		"open_id",
-		"union_id",
-		"user_id"
-	], { description: "用户 ID 类型（默认 open_id）" }))
-})]);
+const FeishuChatSchema = Type.Union([
+	Type.Object({
+		action: Type.Literal("search"),
+		query: Type.String({ description: "搜索关键词（必填）。支持匹配群名称、群成员名称。支持多语种、拼音、前缀等模糊搜索。" }),
+		page_size: Type.Optional(Type.Integer({
+			description: "分页大小（默认20）",
+			minimum: 1
+		})),
+		page_token: Type.Optional(Type.String({ description: "分页标记。首次请求无需填写" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("get"),
+		chat_id: Type.String({ description: "群 ID（格式如 oc_xxx）" }),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("list"),
+		page_size: Type.Optional(Type.Integer({
+			description: "分页大小（默认20，最大100）",
+			minimum: 1,
+			maximum: 100
+		})),
+		page_token: Type.Optional(Type.String({ description: "分页标记。首次请求无需填写" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("create"),
+		name: Type.Optional(Type.String({ description: "群名称。创建内部群时必填（P2P 除外）" })),
+		description: Type.Optional(Type.String({ description: "群描述" })),
+		user_id_list: Type.Optional(Type.Array(Type.String(), { description: "拉入群的用户 ID 列表（类型由 user_id_type 决定）" })),
+		owner_id: Type.Optional(Type.String({ description: "群主 ID（类型由 user_id_type 决定）" })),
+		chat_mode: Type.Optional(StringEnum(["group", "topic"], { description: "群模式。group=群组（默认），topic=话题群" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("update"),
+		chat_id: Type.String({ description: "群 ID（格式如 oc_xxx）" }),
+		name: Type.Optional(Type.String({ description: "新的群名称" })),
+		description: Type.Optional(Type.String({ description: "新的群描述" })),
+		owner_id: Type.Optional(Type.String({ description: "新的群主 ID（类型由 user_id_type 决定）" })),
+		add_member_permission: Type.Optional(StringEnum(["all_members", "only_owner"], { description: "添加成员权限。all_members=所有成员可添加，only_owner=仅群主和管理员可添加" })),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("disband"),
+		chat_id: Type.String({ description: "要解散的群 ID（格式如 oc_xxx）。注意：操作不可逆，解散后群内所有数据将无法恢复。" })
+	}),
+	Type.Object({
+		action: Type.Literal("get_announcement"),
+		chat_id: Type.String({ description: "群 ID（格式如 oc_xxx）。注意：不支持单聊。" }),
+		user_id_type: Type.Optional(StringEnum([
+			"open_id",
+			"union_id",
+			"user_id"
+		], { description: "用户 ID 类型（默认 open_id）" }))
+	}),
+	Type.Object({
+		action: Type.Literal("is_member"),
+		chat_id: Type.String({ description: "群 ID（格式如 oc_xxx）" }),
+		member_id: Type.String({ description: "要查询的用户 open_id 或机器人 app_id" }),
+		member_id_type: Type.Optional(StringEnum([
+			"user_id",
+			"open_id",
+			"union_id",
+			"app_id"
+		], { description: "成员 ID 类型（默认 open_id）" }))
+	})
+]);
 function registerChatSearchTool(api) {
 	if (!api.config) return false;
 	const cfg = api.config;
@@ -5381,7 +6472,7 @@ function registerChatSearchTool(api) {
 	return registerTool(api, {
 		name: "feishu_chat",
 		label: "Feishu: Chat Management",
-		description: "以用户身份调用飞书群聊管理工具。Actions: search（搜索群列表，支持关键词匹配群名称、群成员）, get（获取指定群的详细信息，包括群名称、描述、头像、群主、权限配置等）。",
+		description: "以用户身份调用飞书群聊管理工具。Actions: search（搜索群列表）, get（获取群详情）, list（获取所在群列表）, create（创建群）, update（更新群信息）, disband（解散群，不可逆）, is_member（判断用户是否在群里）。",
 		parameters: FeishuChatSchema,
 		async execute(_toolCallId, params) {
 			const p = params;
@@ -5407,7 +6498,7 @@ function registerChatSearchTool(api) {
 						});
 					}
 					case "get": {
-						log.info(`get: chat_id=${p.chat_id}, user_id_type=${p.user_id_type ?? "open_id"}`);
+						log.info(`get: chat_id=${p.chat_id}`);
 						const res = await client.invoke("feishu_chat.get", (sdk, opts) => sdk.im.v1.chat.get({
 							path: { chat_id: p.chat_id },
 							params: { user_id_type: p.user_id_type || "open_id" }
@@ -5421,6 +6512,85 @@ function registerChatSearchTool(api) {
 						assertLarkOk$2(res);
 						log.info(`get: retrieved chat info for ${p.chat_id}`);
 						return json({ chat: res.data });
+					}
+					case "list": {
+						log.info(`list: page_size=${p.page_size ?? 20}`);
+						const res = await client.invoke("feishu_chat.list", (sdk, opts) => sdk.im.v1.chat.list({ params: {
+							user_id_type: p.user_id_type || "open_id",
+							page_size: p.page_size,
+							page_token: p.page_token
+						} }, opts), { as: "user" });
+						assertLarkOk$2(res);
+						const data = res.data;
+						log.info(`list: found ${data?.items?.length ?? 0} chats`);
+						return json({
+							items: data?.items,
+							has_more: data?.has_more ?? false,
+							page_token: data?.page_token
+						});
+					}
+					case "create": {
+						log.info(`create: name=${p.name}`);
+						const body = {};
+						if (p.name) body.name = p.name;
+						if (p.description) body.description = p.description;
+						if (p.owner_id) body.owner_id = p.owner_id;
+						if (p.user_id_list) body.user_id_list = p.user_id_list;
+						if (p.chat_mode) body.chat_mode = p.chat_mode;
+						const res = await client.invoke("feishu_chat.create", (sdk, opts) => sdk.im.v1.chat.create({
+							params: { user_id_type: p.user_id_type || "open_id" },
+							data: body
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						log.info(`create: created chat ${res.data?.chat_id}`);
+						return json({
+							chat_id: res.data?.chat_id,
+							name: res.data?.name
+						});
+					}
+					case "update": {
+						log.info(`update: chat_id=${p.chat_id}`);
+						const body = {};
+						if (p.name !== void 0) body.name = p.name;
+						if (p.description !== void 0) body.description = p.description;
+						if (p.owner_id !== void 0) body.owner_id = p.owner_id;
+						if (p.add_member_permission !== void 0) body.add_member_permission = p.add_member_permission;
+						assertLarkOk$2(await client.invoke("feishu_chat.update", (sdk, opts) => sdk.im.v1.chat.update({
+							path: { chat_id: p.chat_id },
+							params: { user_id_type: p.user_id_type || "open_id" },
+							data: body
+						}, opts), { as: "user" }));
+						log.info(`update: chat ${p.chat_id} updated`);
+						return json({ success: true });
+					}
+					case "disband":
+						log.info(`disband: chat_id=${p.chat_id}`);
+						assertLarkOk$2(await client.invoke("feishu_chat.disband", (sdk, opts) => sdk.im.v1.chat.delete({ path: { chat_id: p.chat_id } }, opts), { as: "user" }));
+						log.info(`disband: chat ${p.chat_id} disbanded`);
+						return json({ success: true });
+					case "get_announcement": {
+						log.info(`get_announcement: chat_id=${p.chat_id}`);
+						const res = await client.invoke("feishu_chat.get_announcement", (sdk, opts) => sdk.im.v1.chatAnnouncement.get({
+							path: { chat_id: p.chat_id },
+							params: { user_id_type: p.user_id_type || "open_id" }
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						log.info(`get_announcement: retrieved announcement for chat ${p.chat_id}`);
+						return json({ announcement: res.data });
+					}
+					case "is_member": {
+						log.info(`is_member: chat_id=${p.chat_id}, member_id=${p.member_id}`);
+						const res = await client.invoke("feishu_chat.is_member", (sdk, opts) => sdk.im.v1.chatMembers.isInChat({
+							path: { chat_id: p.chat_id },
+							params: {
+								member_id_type: p.member_id_type || "open_id",
+								member_id: p.member_id
+							}
+						}, opts), { as: "user" });
+						assertLarkOk$2(res);
+						const isInChat = res.data?.is_in_chat;
+						log.info(`is_member: member_id=${p.member_id} is_in_chat=${isInChat}`);
+						return json({ is_in_chat: isInChat });
 					}
 				}
 			} catch (err) {
@@ -6502,6 +7672,9 @@ function registerOapiTools(api) {
 	registerFeishuTaskTasklistTool(api);
 	registerFeishuTaskCommentTool(api);
 	registerFeishuTaskSubtaskTool(api);
+	registerFeishuTaskAttachmentTool(api);
+	registerFeishuTaskCustomFieldTool(api);
+	registerFeishuTaskSectionTool(api);
 	registerFeishuBitableAppTool(api);
 	registerFeishuBitableAppTableTool(api);
 	registerFeishuBitableAppTableRecordTool(api);
@@ -6511,11 +7684,19 @@ function registerOapiTools(api) {
 	registerFeishuDriveTools(api);
 	registerFeishuWikiTools(api);
 	registerFeishuSheetsTools(api);
+	registerFeishuOkrTools(api);
 	registerFeishuImTools$1(api);
 	api.logger.info?.("Registered all OAPI tools (calendar, task, bitable, search, drive, wiki, sheets, im)");
 }
 //#endregion
 //#region src/tools/mcp/shared.ts
+/**
+* 将 markdown 字符串中的 Unicode 弯引号替换为 ASCII 引号，
+* 防止 LLM 生成的弯引号在 JSON 序列化/反序列化链路中引发歧义。
+*/
+function sanitizeMarkdown(text) {
+	return text.replace(/\u201C|\u201D/g, "\"").replace(/\u2018|\u2019/g, "'");
+}
 function isRecord(v) {
 	return typeof v === "object" && v !== null;
 }
@@ -6637,6 +7818,7 @@ function registerMcpTool(api, config) {
 				log.debug?.(`Calling ${config.mcpToolName} (toolCallId: ${toolCallId})`);
 				const startTime = Date.now();
 				config.validate?.(p);
+				if (typeof p.markdown === "string") p.markdown = sanitizeMarkdown(p.markdown);
 				const client = toolClient();
 				const brand = client.account.brand;
 				const result = await client.invoke(config.toolActionKey, async (_sdk, _opts, uat) => {
@@ -7007,6 +8189,7 @@ const plugin = {
 		registerFeishuMcpDocTools(api);
 		registerFeishuOAuthTool(api);
 		registerFeishuOAuthBatchAuthTool(api);
+		registerAskUserQuestionTool(api);
 		api.on("before_tool_call", (event) => {
 			log.info(`tool call: ${event.toolName} params=${JSON.stringify(event.params)}`);
 		});
