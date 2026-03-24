@@ -177,8 +177,8 @@ npm install -g openclaw
 ### 第一步：克隆代码
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/openclaw-lark.git
-cd openclaw-lark
+git clone https://github.com/blueskylh/openclaw-lark-2.git
+cd openclaw-lark-2
 ```
 
 ### 第二步：安装依赖
@@ -187,10 +187,16 @@ cd openclaw-lark
 npm install
 ```
 
-### 第三步：在 OpenClaw 中加载本地插件
+### 第三步：编译
 
 ```bash
-openclaw plugin add /path/to/openclaw-lark-2-main
+npm run build
+```
+
+### 第四步：在 OpenClaw 中加载本地插件
+
+```bash
+openclaw plugins install /path/to/openclaw-lark-2
 ```
 
 加载后重启 OpenClaw 网关使配置生效：
