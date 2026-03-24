@@ -917,5 +917,5 @@ export function registerAskUserQuestionTool(api: OpenClawPluginApi): void {
     },
   });
 
-  log.info(`registered tool: ${toolName}`);
+  log.debug(`registered tool: ${toolName}`);
 }
