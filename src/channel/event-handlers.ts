@@ -240,8 +240,8 @@ export async function handleBotMembershipEvent(
 
 export async function handleCardActionEvent(ctx: MonitorContext, data: unknown): Promise<unknown> {
   try {
-    // AskUserQuestion card interactions — must be checked first because
-    // they resolve a blocking Promise in the tool's execute().
+    // AskUserQuestion card interactions — injects synthetic message
+    // carrying user answers for the AI to receive in a new turn.
     const askResult = handleAskUserAction(data, ctx.cfg, ctx.accountId);
     if (askResult !== undefined) return askResult;
 

@@ -4,12 +4,13 @@
  *
  * AskUserQuestion tool — AI agent 主动向用户提问并等待回答。
  *
- * 流程：
+ * 流程（非阻塞，遵循 auto-auth synthetic message 模式）：
  * 1. AI 调用 AskUserQuestion 工具，传入问题和选项
  * 2. 发送 form 交互式飞书卡片
- * 3. 工具 execute() 通过 Promise 阻塞等待用户响应
+ * 3. 工具 execute() 立即返回 { status: 'pending' }
  * 4. 用户填写表单并点击提交，form_value 一次性回传
- * 5. Promise resolve，工具返回用户答案给 AI
+ * 5. handleAskUserAction 解析答案，注入 synthetic message
+ * 6. AI 在新一轮对话中收到用户答案
  *
  * 所有卡片统一使用 form 容器，交互组件在本地缓存值，
  * 提交时通过 form_value 一次性回调，避免独立回调导致的 loading 闪烁。
@@ -18,11 +19,12 @@
 import { randomUUID } from 'node:crypto';
 import type { OpenClawPluginApi, ClawdbotConfig } from 'openclaw/plugin-sdk';
 import { Type } from '@sinclair/typebox';
-import { getTicket } from '../core/lark-ticket';
+import { getTicket, withTicket } from '../core/lark-ticket';
 import { larkLogger } from '../core/lark-logger';
 import { createCardEntity, sendCardByCardId, updateCardKitCard } from '../card/cardkit';
 import { checkToolRegistration, formatToolResult, formatToolError } from './helpers';
-import { yieldCurrentTask } from '../channel/chat-queue';
+import { enqueueFeishuChatTask, buildQueueKey } from '../channel/chat-queue';
+import { handleFeishuMessage } from '../messaging/inbound/handler';
 
 const log = larkLogger('tools/ask-user-question');
 
@@ -30,10 +32,16 @@ const log = larkLogger('tools/ask-user-question');
 // Constants
 // ---------------------------------------------------------------------------
 
-/** 默认超时时间：3 分钟 */
-const DEFAULT_TIMEOUT_MS = 3 * 60 * 1000;
-
 const ACTION_SUBMIT = 'ask_user_submit';
+
+/** TTL for pending questions: auto-expire after 5 minutes. */
+const PENDING_QUESTION_TTL_MS = 5 * 60 * 1000;
+
+/** Max retries for synthetic message injection. */
+const INJECT_MAX_RETRIES = 2;
+
+/** Delay between retry attempts (ms). */
+const INJECT_RETRY_DELAY_MS = 2000;
 
 /** Field name used for text input inside forms. */
 const INPUT_FIELD_NAME = 'answer';
@@ -58,7 +66,8 @@ interface QuestionItem {
   multiSelect: boolean;
 }
 
-interface PendingQuestion {
+/** Lightweight context stored while awaiting user response (no Promise / timeout). */
+interface QuestionContext {
   questionId: string;
   chatId: string;
   accountId: string;
@@ -66,56 +75,100 @@ interface PendingQuestion {
   cardId: string;
   cfg: ClawdbotConfig;
   questions: QuestionItem[];
-  resolve: (answers: Record<string, string>) => void;
-  reject: (error: Error) => void;
-  timeoutTimer: ReturnType<typeof setTimeout>;
   threadId?: string;
-  resolved: boolean;
+  chatType?: 'p2p' | 'group';
+  messageId: string;
   cardSequence: number;
+  submitted: boolean;
+  ttlTimer: ReturnType<typeof setTimeout>;
 }
 
 // ---------------------------------------------------------------------------
-// Flow Manager
+// Pending Question Registry
 // ---------------------------------------------------------------------------
 
-const byQuestionId = new Map<string, PendingQuestion>();
-const byChatKey = new Map<string, PendingQuestion>();
+const pendingQuestions = new Map<string, QuestionContext>();
+/**
+ * Secondary index: chatKey → Set<questionId> for fallback lookup when
+ * operationId is missing. Uses the base key (accountId:chatId, without
+ * threadId) because card action callbacks typically lack thread context.
+ * Stores a Set so multiple pending questions in the same chat don't
+ * overwrite each other's fallback entry.
+ */
+const byChatContext = new Map<string, Set<string>>();
 
-function buildChatKey(accountId: string, chatId: string, threadId?: string): string {
-  return threadId ? `${accountId}:${chatId}:thread:${threadId}` : `${accountId}:${chatId}`;
+/** Arm (or re-arm) the TTL expiry timer for a pending question. */
+function armTtlTimer(ctx: QuestionContext, delayMs: number): void {
+  clearTimeout(ctx.ttlTimer);
+  ctx.ttlTimer = setTimeout(() => {
+    if (!pendingQuestions.has(ctx.questionId)) return; // already consumed
+    if (ctx.submitted) return; // user already submitted, injection in progress
+    log.info(`question ${ctx.questionId} expired (TTL ${delayMs}ms)`);
+    consumePendingQuestion(ctx.questionId);
+    // Update card to expired state (fire-and-forget)
+    setImmediate(async () => {
+      try {
+        await updateCardToExpired(ctx);
+      } catch (err) {
+        log.warn(`failed to update card to expired state: ${err}`);
+      }
+    });
+  }, delayMs);
 }
 
-function registerPendingQuestion(pq: PendingQuestion): void {
-  const chatKey = buildChatKey(pq.accountId, pq.chatId, pq.threadId);
-  const existing = byChatKey.get(chatKey);
-  if (existing && !existing.resolved) {
-    rejectPendingQuestion(existing, new Error('Superseded by a new question'));
+function storePendingQuestion(init: Omit<QuestionContext, 'ttlTimer'>): void {
+  const ctx = init as QuestionContext;
+  pendingQuestions.set(ctx.questionId, ctx);
+  const baseKey = buildQueueKey(ctx.accountId, ctx.chatId);
+  let set = byChatContext.get(baseKey);
+  if (!set) {
+    set = new Set();
+    byChatContext.set(baseKey, set);
   }
-  byQuestionId.set(pq.questionId, pq);
-  byChatKey.set(chatKey, pq);
+  set.add(ctx.questionId);
+
+  armTtlTimer(ctx, PENDING_QUESTION_TTL_MS);
 }
 
-function cleanupPendingQuestion(pq: PendingQuestion): void {
-  clearTimeout(pq.timeoutTimer);
-  byQuestionId.delete(pq.questionId);
-  const chatKey = buildChatKey(pq.accountId, pq.chatId, pq.threadId);
-  if (byChatKey.get(chatKey) === pq) {
-    byChatKey.delete(chatKey);
+function consumePendingQuestion(questionId: string): void {
+  const ctx = pendingQuestions.get(questionId);
+  if (ctx) {
+    clearTimeout(ctx.ttlTimer);
+    pendingQuestions.delete(questionId);
+    const baseKey = buildQueueKey(ctx.accountId, ctx.chatId);
+    const set = byChatContext.get(baseKey);
+    if (set) {
+      set.delete(questionId);
+      if (set.size === 0) byChatContext.delete(baseKey);
+    }
   }
 }
 
-function resolvePendingQuestion(pq: PendingQuestion, answers: Record<string, string>): void {
-  if (pq.resolved) return;
-  pq.resolved = true;
-  cleanupPendingQuestion(pq);
-  pq.resolve(answers);
-}
-
-function rejectPendingQuestion(pq: PendingQuestion, error: Error): void {
-  if (pq.resolved) return;
-  pq.resolved = true;
-  cleanupPendingQuestion(pq);
-  pq.reject(error);
+/**
+ * Targeted chat-scoped fallback: exact accountId:chatId match via secondary index.
+ * Used when operationId cannot be extracted from the card callback.
+ *
+ * Only returns a result when exactly one non-submitted pending question
+ * exists for this chat — refuses to guess when ambiguous.
+ */
+function findQuestionByChat(accountId: string, chatId: string): QuestionContext | undefined {
+  const baseKey = buildQueueKey(accountId, chatId);
+  const set = byChatContext.get(baseKey);
+  if (!set) return undefined;
+  let match: QuestionContext | undefined;
+  for (const qid of set) {
+    const ctx = pendingQuestions.get(qid);
+    if (ctx && !ctx.submitted) {
+      if (match) {
+        // Ambiguous: more than one non-submitted question in this chat.
+        // Refuse to guess — operationId is required to disambiguate.
+        log.warn(`chat-scoped fallback ambiguous: multiple pending questions in ${baseKey}`);
+        return undefined;
+      }
+      match = ctx;
+    }
+  }
+  return match;
 }
 
 // ---------------------------------------------------------------------------
@@ -138,7 +191,7 @@ function getSelectFieldName(questionIndex: number): string {
  * 处理 form 表单提交事件。
  *
  * 统一使用 form 后，所有值通过 form_value 一次性提交。
- * 不再需要处理 select/button 的独立回调。
+ * 解析答案后注入 synthetic message，AI 在新一轮对话中收到答案。
  *
  * @returns 卡片回调响应，或 undefined 表示非本模块的 action
  */
@@ -209,19 +262,31 @@ export function handleAskUserAction(
 
   if (action !== ACTION_SUBMIT) return undefined;
 
-  // Resolve pending question — try operationId first, then context-based lookup
-  if (!operationId || !byQuestionId.has(operationId)) {
-    operationId = findPendingQuestionByContext(accountId, openChatId, senderOpenId)?.questionId;
+  // Look up pending question: try operationId first, then chat-scoped fallback
+  let ctx: QuestionContext | undefined;
+  if (operationId) {
+    ctx = pendingQuestions.get(operationId);
   }
-  if (!operationId) return undefined;
-
-  const pq = byQuestionId.get(operationId);
-  if (!pq) {
-    log.warn(`ask-user action: question ${operationId} not found (expired or already handled)`);
-    return { toast: { type: 'info', content: '该问题已过期或已被回答' } };
+  if (!ctx && openChatId) {
+    // Targeted fallback: exact accountId:chatId match via secondary index
+    ctx = findQuestionByChat(accountId, openChatId);
+    if (ctx) {
+      log.info(`resolved question via chat-scoped fallback: ${ctx.questionId}`);
+    }
+  }
+  if (!ctx) {
+    if (operationId) {
+      log.warn(`ask-user action: question ${operationId} not found (expired or already handled)`);
+    }
+    return operationId
+      ? { toast: { type: 'info', content: '该问题已过期或已被回答' } }
+      : undefined;
+  }
+  if (ctx.submitted) {
+    return { toast: { type: 'info', content: '该问题已提交，请等待处理' } };
   }
 
-  if (senderOpenId && pq.senderOpenId && senderOpenId !== pq.senderOpenId) {
+  if (senderOpenId && ctx.senderOpenId && senderOpenId !== ctx.senderOpenId) {
     return { toast: { type: 'warning', content: '只有被提问的用户可以回答此问题' } };
   }
 
@@ -236,8 +301,8 @@ export function handleAskUserAction(
   const answers: Record<string, string> = {};
   const unanswered: string[] = [];
 
-  for (let i = 0; i < pq.questions.length; i++) {
-    const q = pq.questions[i];
+  for (let i = 0; i < ctx.questions.length; i++) {
+    const q = ctx.questions[i];
     let answer: string | undefined;
 
     if (q.options.length === 0) {
@@ -267,49 +332,123 @@ export function handleAskUserAction(
     };
   }
 
-  resolvePendingQuestion(pq, answers);
+  // Mark as submitted (guard against double-submit & TTL expiry).
+  // Card stays in "待回答" state until synthetic message succeeds — this
+  // keeps the form submittable so the user can retry if injection fails.
+  ctx.submitted = true;
 
-  setImmediate(async () => {
-    try {
-      await updateCardToAnswered(pq, answers);
-    } catch (err) {
-      log.warn(`failed to update card to answered state: ${err}`);
-    }
+  // Inject synthetic message with answers. On success, updates card to
+  // "answered" and consumes context. On failure, resets submitted flag
+  // so user can re-submit — card is still in its original form state.
+  setImmediate(() => {
+    injectAnswerSyntheticMessage(ctx, answers).catch((err) => {
+      log.error(`unhandled error in injectAnswerSyntheticMessage: ${err}`);
+    });
   });
 
-  log.info(`question ${operationId} submitted`);
+  log.info(`question ${operationId} submitted, synthetic message will be injected`);
   return {};
 }
 
+// ---------------------------------------------------------------------------
+// Synthetic Message Injection
+// ---------------------------------------------------------------------------
+
 /**
- * 通过 chat 上下文查找 pending question（降级方案）。
+ * Inject a synthetic message carrying the user's answers so the AI receives
+ * them in a new turn. Follows the same pattern as oauth.ts for auth-complete
+ * synthetic messages. Retries on failure to prevent answer loss.
  */
-function findPendingQuestionByContext(
-  accountId: string,
-  openChatId?: string,
-  senderOpenId?: string,
-): PendingQuestion | undefined {
-  // Try exact chat key lookup first (fastest path)
-  if (openChatId) {
-    const chatKey = buildChatKey(accountId, openChatId);
-    const pq = byChatKey.get(chatKey);
-    if (pq && !pq.resolved) {
-      if (!senderOpenId || !pq.senderOpenId || senderOpenId === pq.senderOpenId) {
-        return pq;
+async function injectAnswerSyntheticMessage(
+  ctx: QuestionContext,
+  answers: Record<string, string>,
+): Promise<void> {
+  const syntheticMsgId = `${ctx.messageId}:ask-user-answer:${ctx.questionId}`;
+
+  // Format answers as readable text for the AI
+  const answerLines = Object.entries(answers)
+    .map(([q, a]) => `- ${q}: ${a}`)
+    .join('\n');
+  const text = `用户回答了你的问题:\n${answerLines}`;
+
+  const syntheticEvent = {
+    sender: { sender_id: { open_id: ctx.senderOpenId } },
+    message: {
+      message_id: syntheticMsgId,
+      chat_id: ctx.chatId,
+      chat_type: ctx.chatType ?? ('p2p' as const),
+      message_type: 'text',
+      content: JSON.stringify({ text }),
+      thread_id: ctx.threadId,
+    },
+  };
+
+  const syntheticRuntime = {
+    log: (msg: string) => log.info(msg),
+    error: (msg: string) => log.error(msg),
+  };
+
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= INJECT_MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      log.info(`retrying synthetic message injection (attempt ${attempt + 1}) for question ${ctx.questionId}`);
+      await new Promise((r) => setTimeout(r, INJECT_RETRY_DELAY_MS));
+    }
+
+    try {
+      const { status, promise } = enqueueFeishuChatTask({
+        accountId: ctx.accountId,
+        chatId: ctx.chatId,
+        threadId: ctx.threadId,
+        task: async () => {
+          await withTicket(
+            {
+              messageId: syntheticMsgId,
+              chatId: ctx.chatId,
+              accountId: ctx.accountId,
+              startTime: Date.now(),
+              senderOpenId: ctx.senderOpenId,
+              chatType: ctx.chatType,
+              threadId: ctx.threadId,
+            },
+            () =>
+              handleFeishuMessage({
+                cfg: ctx.cfg,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                event: syntheticEvent as any,
+                accountId: ctx.accountId,
+                forceMention: true,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                runtime: syntheticRuntime as any,
+                replyToMessageId: ctx.messageId,
+              }),
+          );
+        },
+      });
+
+      // Wait for the task to actually execute (not just enqueue)
+      await promise;
+      consumePendingQuestion(ctx.questionId);
+      log.info(`synthetic answer message dispatched (${status}) for question ${ctx.questionId}`);
+      // Update card to answered state only after synthetic message succeeds.
+      // This ensures the card stays submittable for retry if injection fails.
+      try {
+        await updateCardToAnswered(ctx, answers);
+      } catch (err) {
+        log.warn(`failed to update card to answered state: ${err}`);
       }
+      return; // success
+    } catch (err) {
+      lastError = err;
+      log.warn(`synthetic message injection attempt ${attempt + 1} failed: ${err}`);
     }
   }
 
-  // Fallback: scan all pending questions by accountId (+ optional chatId/sender filtering)
-  for (const candidate of byQuestionId.values()) {
-    if (candidate.resolved) continue;
-    if (candidate.accountId !== accountId) continue;
-    if (openChatId && candidate.chatId !== openChatId) continue;
-    if (senderOpenId && candidate.senderOpenId && senderOpenId !== candidate.senderOpenId) continue;
-    return candidate;
-  }
-
-  return undefined;
+  // All retries exhausted — reset submitted flag so user can retry via card,
+  // and re-arm TTL so the entry doesn't live forever.
+  ctx.submitted = false;
+  armTtlTimer(ctx, PENDING_QUESTION_TTL_MS);
+  log.error(`synthetic message injection failed after ${INJECT_MAX_RETRIES + 1} attempts for question ${ctx.questionId}: ${lastError}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -624,27 +763,27 @@ function buildExpiredCard(questions: QuestionItem[]): Record<string, unknown> {
 // Card Update Helpers
 // ---------------------------------------------------------------------------
 
-async function updateCardToAnswered(pq: PendingQuestion, answers: Record<string, string>): Promise<void> {
-  const card = buildAnsweredCard(pq.questions, answers);
-  pq.cardSequence++;
+async function updateCardToAnswered(ctx: QuestionContext, answers: Record<string, string>): Promise<void> {
+  const card = buildAnsweredCard(ctx.questions, answers);
+  ctx.cardSequence++;
   await updateCardKitCard({
-    cfg: pq.cfg,
-    cardId: pq.cardId,
+    cfg: ctx.cfg,
+    cardId: ctx.cardId,
     card,
-    sequence: pq.cardSequence,
-    accountId: pq.accountId,
+    sequence: ctx.cardSequence,
+    accountId: ctx.accountId,
   });
 }
 
-async function updateCardToExpired(pq: PendingQuestion): Promise<void> {
-  const card = buildExpiredCard(pq.questions);
-  pq.cardSequence++;
+async function updateCardToExpired(ctx: QuestionContext): Promise<void> {
+  const card = buildExpiredCard(ctx.questions);
+  ctx.cardSequence++;
   await updateCardKitCard({
-    cfg: pq.cfg,
-    cardId: pq.cardId,
+    cfg: ctx.cfg,
+    cardId: ctx.cardId,
     card,
-    sequence: pq.cardSequence,
-    accountId: pq.accountId,
+    sequence: ctx.cardSequence,
+    accountId: ctx.accountId,
   });
 }
 
@@ -696,12 +835,12 @@ export function registerAskUserQuestionTool(api: OpenClawPluginApi): void {
     name: toolName,
     label: 'Ask User Question',
     description:
-      'Ask the user a question and wait for their response. ' +
-      'Sends an interactive Feishu card with the question. ' +
+      'Ask the user a question via an interactive Feishu card. ' +
+      'Returns immediately after sending the card. ' +
+      "The user's answers will arrive as a new message in the conversation. " +
+      'Do NOT poll or re-call this tool — just wait for the response message. ' +
       'For selection questions, provide options (renders as dropdown). ' +
-      'For free-text input, set options to an empty array. ' +
-      'The user must answer inside the Feishu card. ' +
-      'Use this when you need clarification or a decision from the user.',
+      'For free-text input, set options to an empty array.',
     parameters: AskUserQuestionSchema,
 
     async execute(_toolCallId: string, params: unknown) {
@@ -749,53 +888,32 @@ export function registerAskUserQuestionTool(api: OpenClawPluginApi): void {
         return formatToolError(`Failed to send question card: ${err}`);
       }
 
-      // 2. Register pending question
-      const answersPromise = new Promise<Record<string, string>>((resolve, reject) => {
-        const timeoutTimer = setTimeout(() => {
-          const pq = byQuestionId.get(questionId);
-          if (pq && !pq.resolved) {
-            rejectPendingQuestion(pq, new Error('Question timed out: no response received within 5 minutes'));
-            setImmediate(async () => {
-              try {
-                await updateCardToExpired(pq);
-              } catch (err) {
-                log.warn(`failed to update card to expired state: ${err}`);
-              }
-            });
-          }
-        }, DEFAULT_TIMEOUT_MS);
-
-        registerPendingQuestion({
-          questionId,
-          chatId,
-          accountId,
-          senderOpenId,
-          cardId: cardId!,
-          cfg,
-          questions,
-          resolve,
-          reject,
-          timeoutTimer,
-          threadId,
-          resolved: false,
-          cardSequence: 1,
-        });
+      // 2. Store context for card action handler to inject synthetic message
+      storePendingQuestion({
+        questionId,
+        chatId,
+        accountId,
+        senderOpenId,
+        cardId,
+        cfg,
+        questions,
+        threadId,
+        chatType: ticket.chatType,
+        messageId: ticket.messageId,
+        cardSequence: 1,
+        submitted: false,
       });
 
-      // 3. Yield queue so group chat isn't blocked
-      yieldCurrentTask(accountId, chatId, threadId);
-      log.info(`yielded chat queue for question ${questionId}`);
-
-      // 4. Wait for answer
-      try {
-        const answers = await answersPromise;
-        log.info(`question ${questionId} answered: ${JSON.stringify(answers)}`);
-        return formatToolResult({ answers });
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        log.warn(`question ${questionId} failed: ${errMsg}`);
-        return formatToolError(errMsg);
-      }
+      // 3. Return immediately — answers will arrive via synthetic message
+      log.info(`question ${questionId} card sent, returning pending status`);
+      return formatToolResult({
+        status: 'pending',
+        questionId,
+        message:
+          'Question card sent to the user. Their answers will arrive as a follow-up message ' +
+          'in this conversation. Do NOT call this tool again for the same question — just wait ' +
+          'for the response message.',
+      });
     },
   });
 
