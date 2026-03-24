@@ -33,6 +33,7 @@ import {
 } from '../../channel/chat-queue';
 import { isLikelyAbortText } from '../../channel/abort-detect';
 import { type DispatchContext, buildDispatchContext, resolveThreadSessionKey } from './dispatch-context';
+import { isThreadCapableGroup } from '../../core/chat-info-cache';
 import {
   buildMessageBody,
   buildBodyForAgent,
@@ -178,6 +179,24 @@ export async function dispatchToAgent(params: {
   // 1. Derive shared context (including route resolution + system event)
   const dc = buildDispatchContext(params);
 
+  // 1a. Thread detection fallback for topic groups.
+  //     In topic groups (chat_mode=topic), reply events may carry root_id
+  //     without thread_id.  When threadSession is enabled, use root_id as
+  //     a synthetic threadId so replies stay inside the topic instead of
+  //     creating a new top-level message.
+  if (!dc.isThread && dc.isGroup && dc.ctx.rootId && dc.account.config?.threadSession === true) {
+    const threadCapable = await isThreadCapableGroup({
+      cfg: dc.accountScopedCfg,
+      chatId: dc.ctx.chatId,
+      accountId: dc.account.accountId,
+    });
+    if (threadCapable) {
+      log.info(`inferred thread from root_id=${dc.ctx.rootId} in topic group ${dc.ctx.chatId}`);
+      dc.isThread = true;
+      dc.ctx = { ...dc.ctx, threadId: dc.ctx.rootId };
+    }
+  }
+
   // 1b. Resolve thread session isolation (async: may query group info API)
   if (dc.isThread && dc.ctx.threadId) {
     dc.threadSessionKey = await resolveThreadSessionKey({
@@ -233,14 +252,13 @@ export async function dispatchToAgent(params: {
   const groupSystemPrompt = dc.isGroup
     ? params.groupConfig?.systemPrompt?.trim() || params.defaultGroupConfig?.systemPrompt?.trim() || undefined
     : undefined;
-  const originatingTo =
-    isBareNewOrReset && dc.isThread
-      ? encodeFeishuRouteTarget({
-          target: dc.feishuTo,
-          replyToMessageId: params.replyToMessageId ?? params.ctx.messageId,
-          threadId: dc.ctx.threadId,
-        })
-      : undefined;
+  const originatingTo = dc.isThread
+    ? encodeFeishuRouteTarget({
+        target: dc.feishuTo,
+        replyToMessageId: params.replyToMessageId ?? params.ctx.messageId,
+        threadId: dc.ctx.threadId,
+      })
+    : undefined;
   const ctxPayload = buildInboundPayload(dc, {
     body: combinedBody,
     bodyForAgent,
