@@ -9,7 +9,13 @@
  * unset fields fall back to the top-level defaults.
  */
 
-import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from 'openclaw/plugin-sdk';
+import { DEFAULT_ACCOUNT_ID } from 'openclaw/plugin-sdk/account-id';
+import { normalizeAccountId as _sdkNormalizeAccountId } from 'openclaw/plugin-sdk/account-id';
+
+const normalizeAccountId: (id: string) => string | undefined =
+    typeof _sdkNormalizeAccountId === 'function'
+        ? _sdkNormalizeAccountId
+        : (id: string) => id?.trim().toLowerCase() || undefined;
 
 import type { ClawdbotConfig } from 'openclaw/plugin-sdk';
 
@@ -153,6 +159,31 @@ export function getLarkAccount(cfg: ClawdbotConfig, accountId?: string | null): 
     verificationToken: merged.verificationToken ?? undefined,
     brand,
     config: merged,
+  };
+}
+
+/**
+ * Build an account-scoped config view for downstream helpers that read from
+ * `cfg.channels.feishu`.
+ *
+ * In multi-account mode, many runtime helpers expect the merged account config
+ * to already be exposed at `cfg.channels.feishu`. This mirrors the inbound
+ * path behavior so outbound/tooling code resolves per-account settings
+ * consistently.
+ *
+ * @param cfg - Original top-level plugin config
+ * @param accountId - Optional target account ID
+ * @returns Config with `channels.feishu` replaced by the merged account config
+ */
+export function createAccountScopedConfig(cfg: ClawdbotConfig, accountId?: string | null): ClawdbotConfig {
+  const account = getLarkAccount(cfg, accountId);
+
+  return {
+    ...cfg,
+    channels: {
+      ...cfg.channels,
+      feishu: account.config,
+    },
   };
 }
 

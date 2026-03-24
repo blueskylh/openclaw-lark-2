@@ -9,13 +9,13 @@
  */
 
 import type { OpenClawPluginApi } from 'openclaw/plugin-sdk';
-import { emptyPluginConfigSchema } from 'openclaw/plugin-sdk';
 import { feishuPlugin } from './src/channel/plugin';
 import { LarkClient } from './src/core/lark-client';
 import { registerOapiTools } from './src/tools/oapi/index';
 import { registerFeishuMcpDocTools } from './src/tools/mcp/doc/index';
 import { registerFeishuOAuthTool } from './src/tools/oauth';
 import { registerFeishuOAuthBatchAuthTool } from './src/tools/oauth-batch-auth';
+import { registerAskUserQuestionTool } from './src/tools/ask-user-question';
 import {
   runDiagnosis,
   formatDiagReportCli,
@@ -28,6 +28,14 @@ import { larkLogger } from './src/core/lark-logger';
 import { emitSecurityWarnings } from './src/core/security-check';
 
 const log = larkLogger('plugin');
+
+function emptyPluginConfigSchema(): Record<string, unknown> {
+  return {
+    type: 'object',
+    additionalProperties: false,
+    properties: {},
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Re-exports for external consumers
@@ -121,8 +129,10 @@ const plugin = {
     // Register OAuth batch auth tool (batch authorization for all app scopes)
     registerFeishuOAuthBatchAuthTool(api);
 
-    // ---- Tool call hooks (trace Feishu-owned tool invocations only) ----
+    // Register AskUserQuestion tool (interactive card-based user prompting)
+    registerAskUserQuestionTool(api);
 
+    // ---- Tool call hooks (trace Feishu-owned tool invocations only) ----
     api.on('before_tool_call', (event) => {
       if (!event.toolName.startsWith('feishu_')) return;
       log.info(`tool call: ${event.toolName} params=${JSON.stringify(event.params)}`);

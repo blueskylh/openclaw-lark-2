@@ -9,8 +9,10 @@
  * start the inbound event gateway.
  */
 
-import type { ChannelMeta, ChannelPlugin, ChannelThreadingToolContext, ClawdbotConfig } from 'openclaw/plugin-sdk';
-import { DEFAULT_ACCOUNT_ID, PAIRING_APPROVED_MESSAGE } from 'openclaw/plugin-sdk';
+import type { ChannelPlugin, ClawdbotConfig } from 'openclaw/plugin-sdk';
+import type { ChannelThreadingToolContext } from 'openclaw/plugin-sdk/channel-contract';
+import { DEFAULT_ACCOUNT_ID } from 'openclaw/plugin-sdk/account-id';
+import { PAIRING_APPROVED_MESSAGE } from 'openclaw/plugin-sdk/channel-status';
 import type { LarkAccount } from '../core/types';
 import { getLarkAccount, getLarkAccountIds, getDefaultLarkAccountId } from '../core/accounts';
 import {
@@ -19,7 +21,6 @@ import {
   listFeishuDirectoryPeersLive,
   listFeishuDirectoryGroupsLive,
 } from './directory';
-import { feishuOnboardingAdapter } from './onboarding';
 import { feishuOutbound } from '../messaging/outbound/outbound';
 import { feishuMessageActions } from '../messaging/outbound/actions';
 import { resolveFeishuGroupToolPolicy } from '../messaging/inbound/policy';
@@ -59,7 +60,7 @@ function adaptDirectoryParams(params: {
 // Meta
 // ---------------------------------------------------------------------------
 
-const meta: ChannelMeta = {
+const meta = {
   id: 'feishu',
   label: 'Feishu',
   selectionLabel: 'Lark/Feishu (\u98DE\u4E66)',
@@ -220,12 +221,6 @@ export const feishuPlugin: ChannelPlugin<LarkAccount> = {
   },
 
   // -------------------------------------------------------------------------
-  // Onboarding
-  // -------------------------------------------------------------------------
-
-  onboarding: feishuOnboardingAdapter,
-
-  // -------------------------------------------------------------------------
   // Messaging
   // -------------------------------------------------------------------------
 
@@ -337,7 +332,7 @@ export const feishuPlugin: ChannelPlugin<LarkAccount> = {
 
     stopAccount: async (ctx) => {
       ctx.log?.info(`stopping feishu[${ctx.accountId}]`);
-      LarkClient.clearCache(ctx.accountId);
+      await LarkClient.clearCache(ctx.accountId);
       ctx.log?.info(`stopped feishu[${ctx.accountId}]`);
     },
   },
