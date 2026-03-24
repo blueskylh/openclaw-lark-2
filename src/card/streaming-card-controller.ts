@@ -522,6 +522,7 @@ export class StreamingCardController {
     if (this.cardCreationPromise) await this.cardCreationPromise;
 
     const errorEffectiveCardId = this.cardKit.cardKitCardId ?? this.cardKit.originalCardKitCardId;
+    const footerMetrics = await this.getFooterSessionMetrics();
     if (this.cardKit.cardMessageId) {
       try {
         const rawErrorText = this.text.accumulatedText
@@ -534,7 +535,6 @@ export class StreamingCardController {
           },
           this.imageResolver,
         );
-        const footerMetrics = await this.getFooterSessionMetrics();
         const errorCard = buildCardContent('complete', {
           text: terminalContent.text,
           reasoningText: terminalContent.reasoningText,

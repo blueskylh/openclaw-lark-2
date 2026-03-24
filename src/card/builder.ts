@@ -9,6 +9,7 @@
  */
 
 import { optimizeMarkdownStyle } from './markdown-style';
+import type { FooterSessionMetrics } from './reply-dispatcher-types';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -58,17 +59,6 @@ export interface ConfirmData {
   operationDescription: string;
   pendingOperationId: string;
   preview?: string;
-}
-
-export interface FooterSessionMetrics {
-  inputTokens?: number;
-  outputTokens?: number;
-  cacheRead?: number;
-  cacheWrite?: number;
-  totalTokens?: number;
-  totalTokensFresh?: boolean;
-  contextTokens?: number;
-  model?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -204,7 +194,7 @@ function buildFooter(zhText: string, enText: string, isError?: boolean): CardEle
   }];
 }
 
-function compactNumber(value: number): string {
+export function compactNumber(value: number): string {
   const abs = Math.abs(value);
   if (abs >= 1_000_000) {
     const m = value / 1_000_000;
@@ -217,7 +207,7 @@ function compactNumber(value: number): string {
   return `${Math.round(value)}`;
 }
 
-function formatFooterRuntimeSegments(params: {
+export function formatFooterRuntimeSegments(params: {
   footer?: {
     status?: boolean;
     elapsed?: boolean;
