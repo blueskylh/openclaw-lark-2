@@ -15,6 +15,7 @@ import { registerOapiTools } from './src/tools/oapi/index';
 import { registerFeishuMcpDocTools } from './src/tools/mcp/doc/index';
 import { registerFeishuOAuthTool } from './src/tools/oauth';
 import { registerFeishuOAuthBatchAuthTool } from './src/tools/oauth-batch-auth';
+import { registerAskUserQuestionTool } from './src/tools/ask-user-question';
 import {
   runDiagnosis,
   formatDiagReportCli,
@@ -127,6 +128,9 @@ const plugin = {
 
     // Register OAuth batch auth tool (batch authorization for all app scopes)
     registerFeishuOAuthBatchAuthTool(api);
+
+    // Register AskUserQuestion tool (interactive card-based user prompting)
+    registerAskUserQuestionTool(api);
 
     // ---- Tool call hooks (auto-trace AI tool invocations) ----
 
