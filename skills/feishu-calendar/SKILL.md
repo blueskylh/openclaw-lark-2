@@ -1,7 +1,7 @@
 ---
 name: feishu-calendar
 description: |
-  飞书日历与日程管理工具集。包含日历管理、日程管理、参会人管理、忙闲查询。
+  飞书日历与日程管理工具集。包含日历管理、日程管理、参会人管理、忙闲查询、请假日程管理。
 ---
 
 # 飞书日历管理 (feishu-calendar)
@@ -28,6 +28,8 @@ description: |
 | 查重复日程实例 | feishu_calendar_event | instances | event_id, start_time, end_time | - | - |
 | 查忙闲 | feishu_calendar_freebusy | list | time_min, time_max, user_ids[] | - | - |
 | 邀请参会人 | feishu_calendar_event_attendee | create | calendar_id, event_id, attendees[] | - | - |
+| 创建请假日程 | feishu_calendar_event | create_leave | user_id, start_time, end_time | - | - |
+| 删除请假日程 | feishu_calendar_event | delete_leave | timeoff_event_id | - | - |
 
 ---
 

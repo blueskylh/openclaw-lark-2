@@ -28,7 +28,7 @@
     "@larksuiteoapi/node-sdk": "^1.59.0",
     "@sinclair/typebox": "0.34.48",
     "image-size": "^2.0.2",
-    "openclaw": "^2026.3.13",
+    "openclaw": "^2026.3.22",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -42,8 +42,8 @@
     "execa": "^9.6.0",
     "fs-extra": "^11.3.2",
     "minimist": "^1.2.8",
-    "tsdown": "^0.21.4",
     "prettier": "^3.8.1",
+    "tsdown": "^0.21.4",
     "typescript": "^5.9.3"
   },
   "openclaw": {

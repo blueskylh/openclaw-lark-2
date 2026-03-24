@@ -215,6 +215,106 @@ const FeishuTaskTaskSchema = Type.Union([
       StringEnum(['open_id', 'union_id', 'user_id']),
     ),
   }),
+
+  // DELETE
+  Type.Object({
+    action: Type.Literal('delete'),
+    task_guid: Type.String({
+      description: '要删除的任务 GUID',
+    }),
+    user_id_type: Type.Optional(
+      StringEnum(['open_id', 'union_id', 'user_id']),
+    ),
+  }),
+
+  // ADD_MEMBERS
+  Type.Object({
+    action: Type.Literal('add_members'),
+    task_guid: Type.String({ description: '任务 GUID' }),
+    members: Type.Array(
+      Type.Object({
+        id: Type.String({ description: '成员 open_id' }),
+        role: Type.Optional(StringEnum(['assignee', 'follower'])),
+      }),
+      { description: '要添加的成员列表' },
+    ),
+    user_id_type: Type.Optional(StringEnum(['open_id', 'union_id', 'user_id'])),
+  }),
+
+  // REMOVE_MEMBERS
+  Type.Object({
+    action: Type.Literal('remove_members'),
+    task_guid: Type.String({ description: '任务 GUID' }),
+    members: Type.Array(
+      Type.Object({
+        id: Type.String({ description: '成员 open_id' }),
+        role: Type.Optional(StringEnum(['assignee', 'follower'])),
+      }),
+      { description: '要移除的成员列表' },
+    ),
+    user_id_type: Type.Optional(StringEnum(['open_id', 'union_id', 'user_id'])),
+  }),
+
+  // ADD_TASKLIST（任务加入清单）
+  Type.Object({
+    action: Type.Literal('add_tasklist'),
+    task_guid: Type.String({ description: '任务 GUID' }),
+    tasklist_guid: Type.String({ description: '要加入的清单 GUID' }),
+    section_guid: Type.Optional(Type.String({ description: '清单中的自定义分组 GUID（不填则加入默认分组）' })),
+    user_id_type: Type.Optional(StringEnum(['open_id', 'union_id', 'user_id'])),
+  }),
+
+  // REMOVE_TASKLIST（任务移出清单）
+  Type.Object({
+    action: Type.Literal('remove_tasklist'),
+    task_guid: Type.String({ description: '任务 GUID' }),
+    tasklist_guid: Type.String({ description: '要移出的清单 GUID' }),
+    user_id_type: Type.Optional(StringEnum(['open_id', 'union_id', 'user_id'])),
+  }),
+
+  // ADD_REMINDER（添加提醒）
+  Type.Object({
+    action: Type.Literal('add_reminder'),
+    task_guid: Type.String({ description: '任务 GUID' }),
+    relative_fire_minute: Type.Integer({
+      description: '相对截止时间的提醒分钟数。只允许非负整数：0=截止时提醒，正数=截止后N分钟提醒（如 30 表示截止后30分钟）。每个任务最多1个提醒。',
+    }),
+    user_id_type: Type.Optional(StringEnum(['open_id', 'union_id', 'user_id'])),
+  }),
+
+  // REMOVE_REMINDER（移除提醒）
+  Type.Object({
+    action: Type.Literal('remove_reminder'),
+    task_guid: Type.String({ description: '任务 GUID' }),
+    reminder_id: Type.String({ description: '提醒 ID（可通过 get action 查看任务详情中的 reminders 字段获取）' }),
+    user_id_type: Type.Optional(StringEnum(['open_id', 'union_id', 'user_id'])),
+  }),
+
+  // ADD_DEPENDENCY（添加任务依赖）
+  Type.Object({
+    action: Type.Literal('add_dependency'),
+    task_guid: Type.String({ description: '任务 GUID' }),
+    dependencies: Type.Array(
+      Type.Object({
+        type: StringEnum(['prev', 'next'], { description: '依赖类型：prev=前置任务（本任务依赖它），next=后置任务（它依赖本任务）' }),
+        task_guid: Type.String({ description: '依赖的任务 GUID' }),
+      }),
+      { description: '要添加的依赖关系列表' },
+    ),
+  }),
+
+  // REMOVE_DEPENDENCY（移除任务依赖）
+  Type.Object({
+    action: Type.Literal('remove_dependency'),
+    task_guid: Type.String({ description: '任务 GUID' }),
+    dependencies: Type.Array(
+      Type.Object({
+        type: StringEnum(['prev', 'next'], { description: '依赖类型：prev=前置任务，next=后置任务' }),
+        task_guid: Type.String({ description: '依赖的任务 GUID' }),
+      }),
+      { description: '要移除的依赖关系列表' },
+    ),
+  }),
 ]);
 
 // ---------------------------------------------------------------------------
@@ -278,6 +378,58 @@ type FeishuTaskTaskParams =
       }>;
       repeat_rule?: string;
       user_id_type?: 'open_id' | 'union_id' | 'user_id';
+    }
+  | {
+      action: 'delete';
+      task_guid: string;
+      user_id_type?: 'open_id' | 'union_id' | 'user_id';
+    }
+  | {
+      action: 'add_members';
+      task_guid: string;
+      members: Array<{ id: string; role?: 'assignee' | 'follower' }>;
+      user_id_type?: 'open_id' | 'union_id' | 'user_id';
+    }
+  | {
+      action: 'remove_members';
+      task_guid: string;
+      members: Array<{ id: string; role?: 'assignee' | 'follower' }>;
+      user_id_type?: 'open_id' | 'union_id' | 'user_id';
+    }
+  | {
+      action: 'add_tasklist';
+      task_guid: string;
+      tasklist_guid: string;
+      section_guid?: string;
+      user_id_type?: 'open_id' | 'union_id' | 'user_id';
+    }
+  | {
+      action: 'remove_tasklist';
+      task_guid: string;
+      tasklist_guid: string;
+      user_id_type?: 'open_id' | 'union_id' | 'user_id';
+    }
+  | {
+      action: 'add_reminder';
+      task_guid: string;
+      relative_fire_minute: number;
+      user_id_type?: 'open_id' | 'union_id' | 'user_id';
+    }
+  | {
+      action: 'remove_reminder';
+      task_guid: string;
+      reminder_id: string;
+      user_id_type?: 'open_id' | 'union_id' | 'user_id';
+    }
+  | {
+      action: 'add_dependency';
+      task_guid: string;
+      dependencies: Array<{ type: 'prev' | 'next'; task_guid: string }>;
+    }
+  | {
+      action: 'remove_dependency';
+      task_guid: string;
+      dependencies: Array<{ type: 'prev' | 'next'; task_guid: string }>;
     };
 
 // ---------------------------------------------------------------------------
@@ -296,7 +448,7 @@ export function registerFeishuTaskTaskTool(api: OpenClawPluginApi) {
       name: 'feishu_task_task',
       label: 'Feishu Task Management',
       description:
-        "【以用户身份】飞书任务管理工具。用于创建、查询、更新任务。Actions: create（创建任务）, get（获取任务详情）, list（查询任务列表，仅返回我负责的任务）, patch（更新任务）。时间参数使用ISO 8601 / RFC 3339 格式（包含时区），例如 '2024-01-01T00:00:00+08:00'。",
+        "【以用户身份】飞书任务管理工具。Actions: create（创建任务）, get（获取任务详情）, list（查询任务列表）, patch（更新任务）, delete（删除任务）, add_members（添加成员）, remove_members（移除成员）, add_tasklist（加入清单）, remove_tasklist（移出清单）, add_reminder（添加提醒）, remove_reminder（移除提醒）, add_dependency（添加任务依赖）, remove_dependency（移除任务依赖）。时间参数使用ISO 8601 / RFC 3339 格式（包含时区），例如 '2024-01-01T00:00:00+08:00'。",
       parameters: FeishuTaskTaskSchema,
       async execute(_toolCallId: string, params: unknown) {
         const p = params as FeishuTaskTaskParams;
@@ -538,6 +690,229 @@ export function registerFeishuTaskTaskTool(api: OpenClawPluginApi) {
               return json({
                 task: res.data?.task,
               });
+            }
+
+            // -----------------------------------------------------------------
+            // DELETE TASK
+            // -----------------------------------------------------------------
+            case 'delete': {
+              log.info(`delete: task_guid=${p.task_guid}`);
+
+              const res = await client.invoke(
+                'feishu_task_task.delete',
+                (sdk: any, opts: any) =>
+                  sdk.task.v2.task.delete(
+                    {
+                      path: { task_guid: p.task_guid },
+                    },
+                    opts,
+                  ),
+                { as: 'user' },
+              );
+              assertLarkOk(res as any);
+
+              log.info(`delete: task ${p.task_guid} deleted`);
+
+              return json({ success: true });
+            }
+
+            // -----------------------------------------------------------------
+            // ADD_MEMBERS
+            // -----------------------------------------------------------------
+            case 'add_members': {
+              log.info(`add_members: task_guid=${p.task_guid}, count=${p.members.length}`);
+
+              const res = await client.invoke(
+                'feishu_task_task.add_members',
+                (sdk, opts) =>
+                  sdk.task.v2.task.addMembers(
+                    {
+                      path: { task_guid: p.task_guid },
+                      params: { user_id_type: (p.user_id_type || 'open_id') as any },
+                      data: {
+                        members: p.members.map((m) => ({ id: m.id, type: 'user', role: m.role || 'assignee' })),
+                      },
+                    },
+                    opts,
+                  ),
+                { as: 'user' },
+              );
+              assertLarkOk(res);
+
+              return json({ task: res.data?.task });
+            }
+
+            // -----------------------------------------------------------------
+            // REMOVE_MEMBERS
+            // -----------------------------------------------------------------
+            case 'remove_members': {
+              log.info(`remove_members: task_guid=${p.task_guid}, count=${p.members.length}`);
+
+              const res = await client.invoke(
+                'feishu_task_task.remove_members',
+                (sdk, opts) =>
+                  sdk.task.v2.task.removeMembers(
+                    {
+                      path: { task_guid: p.task_guid },
+                      params: { user_id_type: (p.user_id_type || 'open_id') as any },
+                      data: {
+                        members: p.members.map((m) => ({ id: m.id, type: 'user', role: m.role || 'assignee' })),
+                      },
+                    },
+                    opts,
+                  ),
+                { as: 'user' },
+              );
+              assertLarkOk(res);
+
+              return json({ task: res.data?.task });
+            }
+
+            // -----------------------------------------------------------------
+            // ADD_TASKLIST（任务加入清单）
+            // -----------------------------------------------------------------
+            case 'add_tasklist': {
+              log.info(`add_tasklist: task_guid=${p.task_guid}, tasklist_guid=${p.tasklist_guid}`);
+
+              const res = await client.invoke(
+                'feishu_task_task.add_tasklist',
+                (sdk, opts) =>
+                  sdk.task.v2.task.addTasklist(
+                    {
+                      path: { task_guid: p.task_guid },
+                      params: { user_id_type: (p.user_id_type || 'open_id') as any },
+                      data: {
+                        tasklist_guid: p.tasklist_guid,
+                        section_guid: p.section_guid,
+                      },
+                    },
+                    opts,
+                  ),
+                { as: 'user' },
+              );
+              assertLarkOk(res);
+
+              return json({ task: res.data?.task });
+            }
+
+            // -----------------------------------------------------------------
+            // REMOVE_TASKLIST（任务移出清单）
+            // -----------------------------------------------------------------
+            case 'remove_tasklist': {
+              log.info(`remove_tasklist: task_guid=${p.task_guid}, tasklist_guid=${p.tasklist_guid}`);
+
+              const res = await client.invoke(
+                'feishu_task_task.remove_tasklist',
+                (sdk, opts) =>
+                  sdk.task.v2.task.removeTasklist(
+                    {
+                      path: { task_guid: p.task_guid },
+                      params: { user_id_type: (p.user_id_type || 'open_id') as any },
+                      data: { tasklist_guid: p.tasklist_guid },
+                    },
+                    opts,
+                  ),
+                { as: 'user' },
+              );
+              assertLarkOk(res);
+
+              return json({ success: true });
+            }
+
+            // -----------------------------------------------------------------
+            // ADD_REMINDER（添加提醒）
+            // -----------------------------------------------------------------
+            case 'add_reminder': {
+              log.info(`add_reminder: task_guid=${p.task_guid}, relative_fire_minute=${p.relative_fire_minute}`);
+
+              const res = await client.invoke(
+                'feishu_task_task.add_reminder',
+                (sdk, opts) =>
+                  sdk.task.v2.task.addReminders(
+                    {
+                      path: { task_guid: p.task_guid },
+                      params: { user_id_type: (p.user_id_type || 'open_id') as any },
+                      data: {
+                        reminders: [{ relative_fire_minute: p.relative_fire_minute }],
+                      },
+                    },
+                    opts,
+                  ),
+                { as: 'user' },
+              );
+              assertLarkOk(res);
+
+              return json({ task: res.data?.task });
+            }
+
+            // -----------------------------------------------------------------
+            // REMOVE_REMINDER（移除提醒）
+            // -----------------------------------------------------------------
+            case 'remove_reminder': {
+              log.info(`remove_reminder: task_guid=${p.task_guid}, reminder_id=${p.reminder_id}`);
+
+              const res = await client.invoke(
+                'feishu_task_task.remove_reminder',
+                (sdk, opts) =>
+                  sdk.task.v2.task.removeReminders(
+                    {
+                      path: { task_guid: p.task_guid },
+                      params: { user_id_type: (p.user_id_type || 'open_id') as any },
+                      data: { reminder_ids: [p.reminder_id] },
+                    },
+                    opts,
+                  ),
+                { as: 'user' },
+              );
+              assertLarkOk(res);
+
+              return json({ task: res.data?.task });
+            }
+
+            // -----------------------------------------------------------------
+            // ADD_DEPENDENCY（添加任务依赖）
+            // -----------------------------------------------------------------
+            case 'add_dependency': {
+              log.info(`add_dependency: task_guid=${p.task_guid}, count=${p.dependencies.length}`);
+
+              const res = await client.invoke(
+                'feishu_task_task.add_dependency',
+                (sdk: any, opts: any) =>
+                  sdk.task.v2.task.addDependencies(
+                    {
+                      path: { task_guid: p.task_guid },
+                      data: { dependencies: p.dependencies },
+                    },
+                    opts,
+                  ),
+                { as: 'user' },
+              );
+              assertLarkOk(res as any);
+
+              return json({ dependencies: (res as any).data?.dependencies });
+            }
+
+            // -----------------------------------------------------------------
+            // REMOVE_DEPENDENCY（移除任务依赖）
+            // -----------------------------------------------------------------
+            case 'remove_dependency': {
+              log.info(`remove_dependency: task_guid=${p.task_guid}, count=${p.dependencies.length}`);
+
+              const res = await client.invoke(
+                'feishu_task_task.remove_dependency',
+                (sdk: any, opts: any) =>
+                  sdk.task.v2.task.removeDependencies(
+                    {
+                      path: { task_guid: p.task_guid },
+                      data: { dependencies: p.dependencies },
+                    },
+                    opts,
+                  ),
+                { as: 'user' },
+              );
+              assertLarkOk(res as any);
+
+              return json({ success: true });
             }
           }
         } catch (err) {

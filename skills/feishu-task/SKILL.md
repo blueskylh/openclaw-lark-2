@@ -1,14 +1,17 @@
 ---
 name: feishu-task
 description: |
-  飞书任务管理工具,用于创建、查询、更新任务和清单。
+  飞书任务管理工具,用于创建、查询、更新任务和清单，支持任务依赖、自定义字段选项、自定义分组管理。
 
   **当以下情况时使用此 Skill**:
   (1) 需要创建、查询、更新任务
   (2) 需要创建、管理任务清单
   (3) 需要查看任务列表或清单内的任务
-  (4) 用户提到"任务"、"待办"、"to-do"、"清单"、"task"
+  (4) 用户提到"任务"、"待办"、"to-do"、"清单"、"task"、"依赖"、"分组"
   (5) 需要设置任务负责人、关注人、截止时间
+  (6) 需要设置任务依赖关系（前置/后置任务）
+  (7) 需要管理自定义字段的选项
+  (8) 需要创建、管理清单或我的任务的自定义分组（Section）
 ---
 
 # 飞书任务管理
@@ -37,6 +40,15 @@ description: |
 | 创建清单 | feishu_task_tasklist | create | name | - | members |
 | 查看清单任务 | feishu_task_tasklist | tasks | tasklist_guid | - | completed |
 | 添加清单成员 | feishu_task_tasklist | add_members | tasklist_guid, members[] | - | - |
+| 添加任务依赖 | feishu_task_task | add_dependency | task_guid, dependencies[] | - | - |
+| 删除任务依赖 | feishu_task_task | remove_dependency | task_guid, dependencies[] | - | - |
+| 创建自定义字段选项 | feishu_task_custom_field | create_option | field_guid, name | - | color_index, insert_before, insert_after |
+| 更新自定义字段选项 | feishu_task_custom_field | update_option | field_guid, option_guid | - | name, color_index, is_hidden |
+| 创建自定义分组 | feishu_task_section | create | name, resource_type | - | insert_before, insert_after |
+| 查看分组详情 | feishu_task_section | get | section_guid | - | - |
+| 列出分组 | feishu_task_section | list | resource_type, resource_id | - | page_size, page_token |
+| 更新分组 | feishu_task_section | patch | section_guid | - | name |
+| 删除分组 | feishu_task_section | delete | section_guid | - | - |
 
 ---
 

@@ -354,6 +354,29 @@ const FeishuCalendarEventSchema = Type.Union([
       }),
     ),
   }),
+
+  // CREATE_LEAVE（创建请假日程）
+  Type.Object({
+    action: Type.Literal('create_leave'),
+    user_id: Type.String({ description: '用户 ID（open_id）' }),
+    start_time: Type.String({
+      description: "请假开始时间（ISO 8601 / RFC 3339 格式，含时区），例如 '2024-01-01T00:00:00+08:00'。全天请假填日期 '2024-01-01'。",
+    }),
+    end_time: Type.String({
+      description: "请假结束时间（格式同 start_time）。全天请假填日期（不含）'2024-01-02'。",
+    }),
+    title: Type.Optional(Type.String({ description: '请假日程标题（默认：请假）' })),
+    is_all_day: Type.Optional(Type.Boolean({ description: '是否全天请假（默认 false）' })),
+    user_id_type: Type.Optional(StringEnum(['open_id', 'union_id', 'user_id'], { description: '用户 ID 类型（默认 open_id）' })),
+  }),
+
+  // DELETE_LEAVE（删除请假日程）
+  Type.Object({
+    action: Type.Literal('delete_leave'),
+    timeoff_event_id: Type.String({ description: '请假日程 ID（由 create_leave 返回）' }),
+    user_id: Type.String({ description: '用户 ID（open_id）' }),
+    user_id_type: Type.Optional(StringEnum(['open_id', 'union_id', 'user_id'], { description: '用户 ID 类型（默认 open_id）' })),
+  }),
 ]);
 
 // ---------------------------------------------------------------------------
@@ -444,6 +467,21 @@ type FeishuCalendarEventParams =
       calendar_id?: string;
       page_size?: number;
       page_token?: string;
+    }
+  | {
+      action: 'create_leave';
+      user_id: string;
+      start_time: string;
+      end_time: string;
+      title?: string;
+      is_all_day?: boolean;
+      user_id_type?: string;
+    }
+  | {
+      action: 'delete_leave';
+      timeoff_event_id: string;
+      user_id: string;
+      user_id_type?: string;
     };
 
 function normalizeCalendarTimeValue(value: unknown): string | undefined {
@@ -1072,6 +1110,75 @@ export function registerFeishuCalendarEventTool(api: OpenClawPluginApi) {
                 has_more: data?.has_more ?? false,
                 page_token: data?.page_token,
               });
+            }
+
+            // -----------------------------------------------------------------
+            // CREATE_LEAVE（创建请假日程）
+            // -----------------------------------------------------------------
+            case 'create_leave': {
+              log.info(`create_leave: user_id=${p.user_id}, start=${p.start_time}, end=${p.end_time}`);
+
+              const startTs = parseTimeToTimestamp(p.start_time);
+              const endTs = parseTimeToTimestamp(p.end_time);
+              if (!startTs || !endTs) {
+                return json({
+                  error: "时间格式错误，请使用 ISO 8601 / RFC 3339 格式（含时区），例如 '2024-01-01T00:00:00+08:00'。全天请假请使用日期格式 '2024-01-01'。",
+                  received_start: p.start_time,
+                  received_end: p.end_time,
+                });
+              }
+
+              const res = await client.invoke(
+                'feishu_calendar_event.create_leave',
+                (sdk: any, opts: any) =>
+                  sdk.calendar.timeoffEvent.create(
+                    {
+                      params: { user_id_type: p.user_id_type || 'open_id' },
+                      data: {
+                        user_id: p.user_id,
+                        timezone: 'Asia/Shanghai',
+                        start_time: String(startTs),
+                        end_time: String(endTs),
+                        title: p.title || '请假',
+                        is_all_day: p.is_all_day ?? false,
+                      },
+                    },
+                    opts,
+                  ),
+                { as: 'user' },
+              );
+              assertLarkOk(res as any);
+
+              const leaveEvent = (res as any).data?.timeoff_event;
+              log.info(`create_leave: created timeoff_event_id=${leaveEvent?.timeoff_event_id}`);
+              return json({ timeoff_event: leaveEvent });
+            }
+
+            // -----------------------------------------------------------------
+            // DELETE_LEAVE（删除请假日程）
+            // -----------------------------------------------------------------
+            case 'delete_leave': {
+              log.info(`delete_leave: timeoff_event_id=${p.timeoff_event_id}, user_id=${p.user_id}`);
+
+              const res = await client.invoke(
+                'feishu_calendar_event.delete_leave',
+                (sdk: any, opts: any) =>
+                  sdk.calendar.timeoffEvent.delete(
+                    {
+                      path: { timeoff_event_id: p.timeoff_event_id },
+                      params: {
+                        user_id_type: p.user_id_type || 'open_id',
+                        user_id: p.user_id,
+                      },
+                    },
+                    opts,
+                  ),
+                { as: 'user' },
+              );
+              assertLarkOk(res as any);
+
+              log.info(`delete_leave: deleted timeoff_event_id=${p.timeoff_event_id}`);
+              return json({ success: true });
             }
           }
         } catch (err) {

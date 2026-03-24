@@ -20,6 +20,9 @@ import {
   registerFeishuTaskTasklistTool,
   registerFeishuTaskCommentTool,
   registerFeishuTaskSubtaskTool,
+  registerFeishuTaskAttachmentTool,
+  registerFeishuTaskCustomFieldTool,
+  registerFeishuTaskSectionTool,
 } from './task/index';
 import {
   registerFeishuBitableAppTool,
@@ -37,6 +40,7 @@ import { registerFeishuWikiTools } from './wiki/index';
 import { registerFeishuImTools as registerFeishuImBotTools } from '../tat/im/index';
 import { registerFeishuSheetsTools } from './sheets/index';
 // import { registerFeishuOkrTools } from "./okr/index";
+import { registerFeishuOkrTools } from './okr/index';
 import { registerFeishuChatTools } from './chat/index';
 import { registerFeishuImTools as registerFeishuImUserTools } from './im/index';
 
@@ -62,6 +66,9 @@ export function registerOapiTools(api: OpenClawPluginApi) {
   registerFeishuTaskTasklistTool(api);
   registerFeishuTaskCommentTool(api);
   registerFeishuTaskSubtaskTool(api);
+  registerFeishuTaskAttachmentTool(api);
+  registerFeishuTaskCustomFieldTool(api);
+  registerFeishuTaskSectionTool(api);
 
   // Bitable tools
   registerFeishuBitableAppTool(api);
@@ -81,6 +88,9 @@ export function registerOapiTools(api: OpenClawPluginApi) {
 
   // Sheets tools
   registerFeishuSheetsTools(api);
+
+  // OKR tools
+  registerFeishuOkrTools(api);
 
   // IM tools (bot identity)
   registerFeishuImBotTools(api);

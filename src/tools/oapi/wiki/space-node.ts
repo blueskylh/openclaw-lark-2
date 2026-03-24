@@ -142,6 +142,19 @@ const FeishuWikiSpaceNodeSchema = Type.Union([
       }),
     ),
   }),
+
+  // MOVE_DOCS_TO_WIKI（将云文档移入知识空间）
+  Type.Object({
+    action: Type.Literal('move_docs_to_wiki'),
+    space_id: Type.String({ description: '目标知识空间 ID' }),
+    parent_wiki_token: Type.Optional(Type.String({ description: '目标父节点 token（不填则移到根节点）' })),
+    obj_type: StringEnum(
+      ['doc', 'sheet', 'bitable', 'mindnote', 'file', 'docx', 'slides'],
+      { description: '文档类型' },
+    ),
+    obj_token: Type.String({ description: '云文档 token' }),
+    apply: Type.Optional(Type.Boolean({ description: '是否申请移动（true=仅申请，等待所有人同意；false=强制移动，需要所有者权限）。默认 false。' })),
+  }),
 ]);
 
 // ---------------------------------------------------------------------------
@@ -183,6 +196,14 @@ type FeishuWikiSpaceNodeParams =
       target_space_id?: string;
       target_parent_token?: string;
       title?: string;
+    }
+  | {
+      action: 'move_docs_to_wiki';
+      space_id: string;
+      parent_wiki_token?: string;
+      obj_type: string;
+      obj_token: string;
+      apply?: boolean;
     };
 
 // ---------------------------------------------------------------------------
@@ -201,7 +222,7 @@ export function registerFeishuWikiSpaceNodeTool(api: OpenClawPluginApi): boolean
       name: 'feishu_wiki_space_node',
       label: 'Feishu Wiki Space Nodes',
       description:
-        '飞书知识库节点管理工具。操作：list（列表）、get（获取）、create（创建）、move（移动）、copy（复制）。' +
+        '飞书知识库节点管理工具。操作：list（列表）、get（获取）、create（创建）、move（移动）、copy（复制）、move_docs_to_wiki（将云文档移入知识空间）。' +
         '节点是知识库中的文档，包括 doc、bitable(多维表表格)、sheet(电子表格) 等类型。' +
         'node_token 是节点的唯一标识符，obj_token 是实际文档的 token。可通过 get 操作将 wiki 类型的 node_token 转换为实际文档的 obj_token。',
       parameters: FeishuWikiSpaceNodeSchema,
@@ -378,6 +399,40 @@ export function registerFeishuWikiSpaceNodeTool(api: OpenClawPluginApi): boolean
 
               return json({
                 node: res.data?.node,
+              });
+            }
+
+            // -----------------------------------------------------------------
+            // MOVE_DOCS_TO_WIKI（将云文档移入知识空间）
+            // -----------------------------------------------------------------
+            case 'move_docs_to_wiki': {
+              log.info(`move_docs_to_wiki: space_id=${p.space_id}, obj_type=${p.obj_type}, obj_token=${p.obj_token}`);
+
+              const res = await client.invoke(
+                'feishu_wiki_space_node.move_docs_to_wiki',
+                (sdk: any, opts: any) =>
+                  sdk.wiki.task.moveDocsToWiki(
+                    {
+                      data: {
+                        space_id: p.space_id,
+                        parent_wiki_token: p.parent_wiki_token,
+                        obj_type: p.obj_type,
+                        obj_token: p.obj_token,
+                        apply: p.apply ?? false,
+                      },
+                    },
+                    opts,
+                  ),
+                { as: 'user' },
+              );
+              assertLarkOk(res as any);
+
+              const data = (res as any).data;
+              log.info(`move_docs_to_wiki: task_id=${data?.task_id}, wiki_token=${data?.wiki_token}`);
+              return json({
+                wiki_token: data?.wiki_token,
+                task_id: data?.task_id,
+                apply: data?.apply,
               });
             }
           }

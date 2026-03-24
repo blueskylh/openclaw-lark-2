@@ -50,6 +50,16 @@ export interface McpToolConfig<T = unknown> {
 // 辅助函数
 // ---------------------------------------------------------------------------
 
+/**
+ * 将 markdown 字符串中的 Unicode 弯引号替换为 ASCII 引号，
+ * 防止 LLM 生成的弯引号在 JSON 序列化/反序列化链路中引发歧义。
+ */
+export function sanitizeMarkdown(text: string): string {
+  return text
+    .replace(/\u201C|\u201D/g, '"') // " " → "
+    .replace(/\u2018|\u2019/g, "'"); // ' ' → '
+}
+
 export function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null;
 }
@@ -243,6 +253,13 @@ export function registerMcpTool<T extends Record<string, unknown>>(
 
           // 执行参数验证
           config.validate?.(p);
+
+          // 对 markdown 参数做弯引号替换，防止 Unicode 引号破坏 JSON 结构
+          if (typeof (p as Record<string, unknown>).markdown === 'string') {
+            (p as Record<string, unknown>).markdown = sanitizeMarkdown(
+              (p as Record<string, unknown>).markdown as string,
+            );
+          }
 
           const client = toolClient();
           const brand = client.account.brand;

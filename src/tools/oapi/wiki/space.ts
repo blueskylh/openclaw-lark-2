@@ -68,6 +68,27 @@ const FeishuWikiSpaceSchema = Type.Union([
       }),
     ),
   }),
+
+  // UPDATE_SETTING（更新知识空间设置）
+  Type.Object({
+    action: Type.Literal('update_setting'),
+    space_id: Type.String({ description: '知识空间 ID' }),
+    create_setting: Type.Optional(
+      Type.String({
+        description: '谁可以创建空间节点：admin（仅管理员）, member（所有成员）',
+      }),
+    ),
+    security_setting: Type.Optional(
+      Type.String({
+        description: '谁可以导出文档：admin（仅管理员）, member（所有成员）',
+      }),
+    ),
+    comment_setting: Type.Optional(
+      Type.String({
+        description: '谁可以评论：admin（仅管理员）, member（所有成员）',
+      }),
+    ),
+  }),
 ]);
 
 // ---------------------------------------------------------------------------
@@ -88,6 +109,13 @@ type FeishuWikiSpaceParams =
       action: 'create';
       name?: string;
       description?: string;
+    }
+  | {
+      action: 'update_setting';
+      space_id: string;
+      create_setting?: string;
+      security_setting?: string;
+      comment_setting?: string;
     };
 
 // ---------------------------------------------------------------------------
@@ -106,7 +134,7 @@ export function registerFeishuWikiSpaceTool(api: OpenClawPluginApi): boolean {
       name: 'feishu_wiki_space',
       label: 'Feishu Wiki Spaces',
       description:
-        '飞书知识空间管理工具。当用户要求查看知识库列表、获取知识库信息、创建知识库时使用。Actions: list（列出知识空间）, get（获取知识空间信息）, create（创建知识空间）。' +
+        '飞书知识空间管理工具。当用户要求查看知识库列表、获取知识库信息、创建知识库时使用。Actions: list（列出知识空间）, get（获取知识空间信息）, create（创建知识空间）, update_setting（更新空间设置）。' +
         '【重要】space_id 可以从浏览器 URL 中获取，或通过 list 接口获取。' +
         '【重要】知识空间（Space）是知识库的基本组成单位，包含多个具有层级关系的文档节点。',
       parameters: FeishuWikiSpaceSchema,
@@ -203,6 +231,36 @@ export function registerFeishuWikiSpaceTool(api: OpenClawPluginApi): boolean {
               return json({
                 space: res.data?.space,
               });
+            }
+
+            // -----------------------------------------------------------------
+            // UPDATE_SETTING
+            // -----------------------------------------------------------------
+            case 'update_setting': {
+              log.info(`update_setting: space_id=${p.space_id}`);
+
+              const setting: any = {};
+              if (p.create_setting !== undefined) setting.create_setting = p.create_setting;
+              if (p.security_setting !== undefined) setting.security_setting = p.security_setting;
+              if (p.comment_setting !== undefined) setting.comment_setting = p.comment_setting;
+
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const res = await client.invoke(
+                'feishu_wiki_space.update_setting',
+                (sdk: any, opts: any) =>
+                  sdk.wiki.spaceSetting.update(
+                    {
+                      path: { space_id: p.space_id },
+                      data: setting,
+                    },
+                    opts,
+                  ),
+                { as: 'user' },
+              );
+              assertLarkOk(res as any);
+
+              log.info(`update_setting: updated settings for space ${p.space_id}`);
+              return json({ setting: (res as any).data?.setting });
             }
           }
         } catch (err) {

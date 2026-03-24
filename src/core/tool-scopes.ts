@@ -81,9 +81,13 @@ export type ToolActionKey =
   | 'feishu_bitable_app_table_view.get'
   | 'feishu_bitable_app_table_view.list'
   | 'feishu_bitable_app_table_view.patch'
+  | 'feishu_calendar_calendar.create'
+  | 'feishu_calendar_calendar.delete'
   | 'feishu_calendar_calendar.get'
   | 'feishu_calendar_calendar.list'
   | 'feishu_calendar_calendar.primary'
+  | 'feishu_calendar_calendar.search'
+  | 'feishu_calendar_calendar.update'
   | 'feishu_calendar_event.create'
   | 'feishu_calendar_event.delete'
   | 'feishu_calendar_event.get'
@@ -94,11 +98,20 @@ export type ToolActionKey =
   | 'feishu_calendar_event.reply'
   | 'feishu_calendar_event.search'
   | 'feishu_calendar_event_attendee.create'
+  | 'feishu_calendar_event_attendee.delete'
   | 'feishu_calendar_event_attendee.list'
   | 'feishu_calendar_freebusy.list'
+  | 'feishu_chat.create'
+  | 'feishu_chat.disband'
   | 'feishu_chat.get'
+  | 'feishu_chat.get_announcement'
+  | 'feishu_chat.list'
   | 'feishu_chat.search'
+  | 'feishu_chat.update'
+  | 'feishu_chat_members.add'
   | 'feishu_chat_members.default'
+  | 'feishu_chat_members.get'
+  | 'feishu_chat_members.remove'
   | 'feishu_create_doc.default'
   | 'feishu_doc_comments.create'
   | 'feishu_doc_comments.list'
@@ -121,21 +134,33 @@ export type ToolActionKey =
   | 'feishu_im_user_message.send'
   | 'feishu_im_user_search_messages.default'
   | 'feishu_search_doc_wiki.search'
+  | 'feishu_search_message.search'
   | 'feishu_search_user.default'
   | 'feishu_task_comment.create'
+  | 'feishu_task_comment.delete'
   | 'feishu_task_comment.get'
   | 'feishu_task_comment.list'
+  | 'feishu_task_comment.update'
   | 'feishu_task_subtask.create'
   | 'feishu_task_subtask.list'
+  | 'feishu_task_task.add_members'
+  | 'feishu_task_task.add_reminder'
+  | 'feishu_task_task.add_tasklist'
   | 'feishu_task_task.create'
+  | 'feishu_task_task.delete'
   | 'feishu_task_task.get'
   | 'feishu_task_task.list'
   | 'feishu_task_task.patch'
+  | 'feishu_task_task.remove_members'
+  | 'feishu_task_task.remove_reminder'
+  | 'feishu_task_task.remove_tasklist'
   | 'feishu_task_tasklist.add_members'
   | 'feishu_task_tasklist.create'
+  | 'feishu_task_tasklist.delete'
   | 'feishu_task_tasklist.get'
   | 'feishu_task_tasklist.list'
   | 'feishu_task_tasklist.patch'
+  | 'feishu_task_tasklist.remove_members'
   | 'feishu_task_tasklist.tasks'
   | 'feishu_update_doc.default'
   | 'feishu_wiki_space.create'
@@ -152,7 +177,48 @@ export type ToolActionKey =
   | 'feishu_sheet.append'
   | 'feishu_sheet.find'
   | 'feishu_sheet.create'
-  | 'feishu_sheet.export';
+  | 'feishu_sheet.export'
+  | 'feishu_sheet.sheet_add'
+  | 'feishu_sheet.sheet_delete'
+  | 'feishu_sheet.sheet_rename'
+  | 'feishu_sheet.row_col_insert'
+  | 'feishu_sheet.row_col_delete'
+  | 'feishu_wiki_space_member.list'
+  | 'feishu_wiki_space_member.add'
+  | 'feishu_wiki_space_member.delete'
+  | 'feishu_drive_folder.create'
+  | 'feishu_drive_folder.list'
+  | 'feishu_drive_file.search'
+  | 'feishu_okr.list_periods'
+  | 'feishu_okr.list'
+  | 'feishu_okr.get'
+  | 'feishu_okr.add_progress'
+  | 'feishu_okr.update_progress'
+  | 'feishu_okr.get_progress'
+  | 'feishu_okr.delete_progress'
+  | 'feishu_task_attachment.list'
+  | 'feishu_task_attachment.get'
+  | 'feishu_task_attachment.delete'
+  | 'feishu_task_custom_field.create'
+  | 'feishu_task_custom_field.update'
+  | 'feishu_task_custom_field.get'
+  | 'feishu_task_custom_field.list'
+  | 'feishu_task_custom_field.add_to_resource'
+  | 'feishu_task_custom_field.remove_from_resource'
+  | 'feishu_task_custom_field.create_option'
+  | 'feishu_task_custom_field.update_option'
+  | 'feishu_task_task.add_dependency'
+  | 'feishu_task_task.remove_dependency'
+  | 'feishu_task_section.create'
+  | 'feishu_task_section.get'
+  | 'feishu_task_section.list'
+  | 'feishu_task_section.patch'
+  | 'feishu_task_section.delete'
+  | 'feishu_calendar_event.create_leave'
+  | 'feishu_calendar_event.delete_leave'
+  | 'feishu_chat.is_member'
+  | 'feishu_wiki_space.update_setting'
+  | 'feishu_wiki_space_node.move_docs_to_wiki';
 /**
  * Tool Scope 映射类型
  *
@@ -210,6 +276,10 @@ export const TOOL_SCOPES: ToolScopeMapping = {
   'feishu_calendar_calendar.list': ['calendar:calendar:read'],
   'feishu_calendar_calendar.get': ['calendar:calendar:read'],
   'feishu_calendar_calendar.primary': ['calendar:calendar:read'],
+  'feishu_calendar_calendar.create': ['calendar:calendar:create', 'calendar:calendar:update'],
+  'feishu_calendar_calendar.update': ['calendar:calendar:update'],
+  'feishu_calendar_calendar.delete': ['calendar:calendar:delete'],
+  'feishu_calendar_calendar.search': ['calendar:calendar:read'],
   'feishu_calendar_event.create': ['calendar:calendar.event:create', 'calendar:calendar.event:update'],
   'feishu_calendar_event.list': ['calendar:calendar.event:read'],
   'feishu_calendar_event.get': ['calendar:calendar.event:read'],
@@ -221,25 +291,45 @@ export const TOOL_SCOPES: ToolScopeMapping = {
   'feishu_calendar_event.instance_view': ['calendar:calendar.event:read'],
   'feishu_calendar_event_attendee.create': ['calendar:calendar.event:update'],
   'feishu_calendar_event_attendee.list': ['calendar:calendar.event:read'],
+  'feishu_calendar_event_attendee.delete': ['calendar:calendar.event:update'],
   'feishu_calendar_freebusy.list': ['calendar:calendar.free_busy:read'],
   'feishu_task_task.create': ['task:task:write', 'task:task:writeonly'],
   'feishu_task_task.get': ['task:task:read', 'task:task:write'],
   'feishu_task_task.list': ['task:task:read', 'task:task:write'],
   'feishu_task_task.patch': ['task:task:write', 'task:task:writeonly'],
+  'feishu_task_task.delete': ['task:task:write', 'task:task:writeonly'],
+  'feishu_task_task.add_members': ['task:task:write'],
+  'feishu_task_task.remove_members': ['task:task:write'],
+  'feishu_task_task.add_tasklist': ['task:task:write'],
+  'feishu_task_task.remove_tasklist': ['task:task:write'],
+  'feishu_task_task.add_reminder': ['task:task:write'],
+  'feishu_task_task.remove_reminder': ['task:task:write'],
   'feishu_task_tasklist.create': ['task:tasklist:write'],
   'feishu_task_tasklist.get': ['task:tasklist:read', 'task:tasklist:write'],
   'feishu_task_tasklist.list': ['task:tasklist:read', 'task:tasklist:write'],
   'feishu_task_tasklist.tasks': ['task:tasklist:read', 'task:tasklist:write'],
   'feishu_task_tasklist.patch': ['task:tasklist:write'],
   'feishu_task_tasklist.add_members': ['task:tasklist:write'],
+  'feishu_task_tasklist.delete': ['task:tasklist:write'],
+  'feishu_task_tasklist.remove_members': ['task:tasklist:write'],
   'feishu_task_comment.create': ['task:comment:write'],
   'feishu_task_comment.list': ['task:comment:read', 'task:comment:write'],
   'feishu_task_comment.get': ['task:comment:read', 'task:comment:write'],
+  'feishu_task_comment.update': ['task:comment:write'],
+  'feishu_task_comment.delete': ['task:comment:write'],
   'feishu_task_subtask.create': ['task:task:write'],
   'feishu_task_subtask.list': ['task:task:read', 'task:task:write'],
   'feishu_chat.search': ['im:chat:read'],
   'feishu_chat.get': ['im:chat:read'],
+  'feishu_chat.list': ['im:chat:read'],
+  'feishu_chat.create': ['im:chat', 'im:chat:create'],
+  'feishu_chat.update': ['im:chat'],
+  'feishu_chat.disband': ['im:chat'],
+  'feishu_chat.get_announcement': ['im:chat', 'im:chat.announcement:read', 'im:chat:readonly'],
   'feishu_chat_members.default': ['im:chat.members:read'],
+  'feishu_chat_members.get': ['im:chat.members:read'],
+  'feishu_chat_members.add': ['im:chat', 'im:chat.members:write_only'],
+  'feishu_chat_members.remove': ['im:chat', 'im:chat.members:write_only'],
   'feishu_drive_file.list': ['space:document:retrieve'],
   'feishu_drive_file.get_meta': ['drive:drive.metadata:readonly'],
   'feishu_drive_file.copy': ['docs:document:copy'],
@@ -285,6 +375,7 @@ export const TOOL_SCOPES: ToolScopeMapping = {
     'search:message',
   ],
   'feishu_search_doc_wiki.search': ['search:docs:read'],
+  'feishu_search_message.search': ['search:message'],
   'feishu_get_user.basic_batch': ['contact:user.basic_profile:readonly'],
   'feishu_get_user.default': ['contact:contact.base:readonly', 'contact:user.base:readonly'],
   'feishu_search_user.default': ['contact:user:search'],
@@ -326,6 +417,47 @@ export const TOOL_SCOPES: ToolScopeMapping = {
     'sheets:spreadsheet:write_only',
   ],
   'feishu_sheet.export': ['docs:document:export'],
+  'feishu_sheet.sheet_add': ['sheets:spreadsheet.meta:read', 'sheets:spreadsheet:read', 'sheets:spreadsheet:write_only'],
+  'feishu_sheet.sheet_delete': ['sheets:spreadsheet.meta:read', 'sheets:spreadsheet:read', 'sheets:spreadsheet:write_only'],
+  'feishu_sheet.sheet_rename': ['sheets:spreadsheet.meta:read', 'sheets:spreadsheet:read', 'sheets:spreadsheet:write_only'],
+  'feishu_sheet.row_col_insert': ['sheets:spreadsheet.meta:read', 'sheets:spreadsheet:read', 'sheets:spreadsheet:write_only'],
+  'feishu_sheet.row_col_delete': ['sheets:spreadsheet.meta:read', 'sheets:spreadsheet:read', 'sheets:spreadsheet:write_only'],
+  'feishu_wiki_space_member.list': ['wiki:member:retrieve'],
+  'feishu_wiki_space_member.add': ['wiki:member:create'],
+  'feishu_wiki_space_member.delete': ['wiki:member:delete'],
+  'feishu_drive_folder.create': ['space:folder:create'],
+  'feishu_drive_folder.list': ['space:document:retrieve'],
+  'feishu_drive_file.search': ['space:document:retrieve'],
+  'feishu_okr.list_periods': ['okr:okr:readonly'],
+  'feishu_okr.list': ['okr:okr:readonly'],
+  'feishu_okr.get': ['okr:okr:readonly'],
+  'feishu_okr.add_progress': ['okr:okr.progress:writeonly'],
+  'feishu_okr.update_progress': ['okr:okr.progress:writeonly'],
+  'feishu_okr.get_progress': ['okr:okr:readonly'],
+  'feishu_okr.delete_progress': ['okr:okr.progress:delete'],
+  'feishu_task_attachment.list': ['task:attachment:read'],
+  'feishu_task_attachment.get': ['task:attachment:read'],
+  'feishu_task_attachment.delete': ['task:attachment:write'],
+  'feishu_task_custom_field.create': ['task:custom_field:write'],
+  'feishu_task_custom_field.update': ['task:custom_field:write'],
+  'feishu_task_custom_field.get': ['task:custom_field:read'],
+  'feishu_task_custom_field.list': ['task:custom_field:read'],
+  'feishu_task_custom_field.add_to_resource': ['task:custom_field:write'],
+  'feishu_task_custom_field.remove_from_resource': ['task:custom_field:write'],
+  'feishu_task_custom_field.create_option': ['task:custom_field:write'],
+  'feishu_task_custom_field.update_option': ['task:custom_field:write'],
+  'feishu_task_task.add_dependency': ['task:task:write'],
+  'feishu_task_task.remove_dependency': ['task:task:write'],
+  'feishu_task_section.create': ['task:task:write'],
+  'feishu_task_section.get': ['task:task:read'],
+  'feishu_task_section.list': ['task:task:read'],
+  'feishu_task_section.patch': ['task:task:write'],
+  'feishu_task_section.delete': ['task:task:write'],
+  'feishu_calendar_event.create_leave': ['calendar:timeoff_event:write'],
+  'feishu_calendar_event.delete_leave': ['calendar:timeoff_event:write'],
+  'feishu_chat.is_member': ['im:chat:read'],
+  'feishu_wiki_space.update_setting': ['wiki:wiki:write'],
+  'feishu_wiki_space_node.move_docs_to_wiki': ['wiki:wiki:write'],
 } as const;
 
 // ===== 必需的应用身份权限 =====
@@ -459,8 +591,8 @@ export function filterSensitiveScopes(scopes: string[]): string[] {
 // ===== 统计信息 =====
 
 /**
- * 工具动作总数: 96
- * 唯一 scope 总数: 74
+ * 工具动作总数: 128
+ * 唯一 scope 总数: 83
  * 必需应用权限总数: 20
  * 高敏感权限总数: 4
  */
