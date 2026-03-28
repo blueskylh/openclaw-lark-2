@@ -200,6 +200,8 @@ export interface FeishuMediaInfo {
   fileKey: string;
   /** Resource type from the original descriptor. */
   resourceType: ResourceDescriptor['type'];
+  /** Base64 data URL for inline embedding (images/stickers). Avoids absolute-path security blocks. */
+  dataUrl?: string;
 }
 
 // ---------------------------------------------------------------------------

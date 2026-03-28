@@ -211,6 +211,18 @@ const FeishuTaskTaskSchema = Type.Union([
         description: '新的重复规则（RRULE 格式）',
       }),
     ),
+    custom_fields: Type.Optional(
+      Type.Array(
+        Type.Object({
+          guid: Type.String({ description: '自定义字段 GUID' }),
+          value: Type.String({
+            description:
+              '字段值（JSON 字符串）。单选示例：{"option_value":{"option_guid":"xxx"}}；多选示例：{"multi_option_value":[{"option_guid":"xxx"}]}；文本示例：{"text_value":"内容"}；数字示例：{"number_value":"42"}',
+          }),
+        }),
+        { description: '自定义字段列表' },
+      ),
+    ),
     user_id_type: Type.Optional(
       StringEnum(['open_id', 'union_id', 'user_id']),
     ),
@@ -377,6 +389,7 @@ type FeishuTaskTaskParams =
         role?: 'assignee' | 'follower';
       }>;
       repeat_rule?: string;
+      custom_fields?: Array<{ guid: string; value: string }>;
       user_id_type?: 'open_id' | 'union_id' | 'user_id';
     }
   | {
@@ -661,6 +674,7 @@ export function registerFeishuTaskTaskTool(api: OpenClawPluginApi): void {
 
               if (p.members) updateData.members = p.members;
               if (p.repeat_rule) updateData.repeat_rule = p.repeat_rule;
+              if (p.custom_fields) updateData.custom_fields = p.custom_fields;
 
               // Build update_fields list (required by Task API)
               const updateFields = Object.keys(updateData);

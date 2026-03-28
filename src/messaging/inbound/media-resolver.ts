@@ -57,12 +57,17 @@ export async function downloadResources(params: {
       const saved = await core.channel.media.saveMediaBuffer(result.buffer, contentType, 'inbound', maxBytes, fileName);
 
       const placeholder = inferPlaceholderFromType(res.type);
+      const dataUrl =
+        (res.type === 'image' || res.type === 'sticker') && saved.contentType
+          ? `data:${saved.contentType};base64,${result.buffer.toString('base64')}`
+          : undefined;
       out.push({
         path: saved.path,
         contentType: saved.contentType,
         placeholder,
         fileKey: res.fileKey,
         resourceType: res.type,
+        dataUrl,
       });
 
       log?.(`feishu: downloaded ${res.type} resource ${res.fileKey}, saved to ${saved.path}`);

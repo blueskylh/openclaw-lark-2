@@ -198,12 +198,12 @@ export function substituteMediaPaths(content: string, mediaList: FeishuMediaInfo
     const { fileKey, path, resourceType } = media;
     switch (resourceType) {
       case 'image':
-        // ![image](img_v3_xxx) → local path (SDK detects image extensions)
-        result = result.replace(`![image](${fileKey})`, path);
+        // ![image](img_v3_xxx) → data URL (avoids absolute-path security blocks) or local path fallback
+        result = result.replace(`![image](${fileKey})`, media.dataUrl ?? path);
         break;
       case 'sticker':
-        // <sticker key="xxx"/> → local path (treated like image)
-        result = result.replace(`<sticker key="${fileKey}"/>`, path);
+        // <sticker key="xxx"/> → data URL or local path fallback
+        result = result.replace(`<sticker key="${fileKey}"/>`, media.dataUrl ?? path);
         break;
       case 'audio': {
         // <audio key="xxx" .../> → [Audio: /path/to/audio.opus ...]

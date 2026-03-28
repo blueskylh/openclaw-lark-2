@@ -243,6 +243,12 @@ const FeishuCalendarEventSchema = Type.Union([
         description: '新的地点',
       }),
     ),
+    recurrence: Type.Optional(
+      Type.String({
+        description:
+          "重复规则（RFC5545 RRULE 格式，不含 'RRULE:' 前缀）。例如：'FREQ=MONTHLY;BYMONTHDAY=1' 表示每月1日重复。注意：飞书不支持将单次日程修改为重复日程，recurrence 只能在创建时指定或更新已有重复日程的规则。",
+      }),
+    ),
   }),
 
   // DELETE (P1)
@@ -431,6 +437,7 @@ type FeishuCalendarEventParams =
       start_time?: string;
       end_time?: string;
       location?: string;
+      recurrence?: string;
     }
   | {
       action: 'delete';
@@ -872,6 +879,7 @@ export function registerFeishuCalendarEventTool(api: OpenClawPluginApi): void {
               if (p.summary) updateData.summary = p.summary;
               if (p.description) updateData.description = p.description;
               if (p.location) updateData.location = { name: p.location };
+              if (p.recurrence) updateData.recurrence = p.recurrence;
 
               log.info(
                 `patch: calendar_id=${calendarId}, event_id=${p.event_id}, fields=${Object.keys(updateData).join(',')}`,
