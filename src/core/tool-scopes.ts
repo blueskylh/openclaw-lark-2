@@ -587,7 +587,6 @@ export function filterSensitiveScopes(scopes: string[]): string[] {
   return scopes.filter((scope) => !sensitiveSet.has(scope));
 }
 
-
 // ===== 统计信息 =====
 
 /**

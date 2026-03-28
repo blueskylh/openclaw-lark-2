@@ -17,7 +17,7 @@ import { registerUpdateDocTool } from './update';
 /**
  * 注册 MCP Doc 工具（仅保留 create/fetch/update，search/list 已由 OAPI 替代）
  */
-export function registerFeishuMcpDocTools(api: OpenClawPluginApi) {
+export function registerFeishuMcpDocTools(api: OpenClawPluginApi): void {
   if (!api.config) {
     api.logger.debug?.('feishu_doc: No config available, skipping');
     return;
@@ -46,6 +46,6 @@ export function registerFeishuMcpDocTools(api: OpenClawPluginApi) {
   if (registerCreateDocTool(api)) registered.push('feishu_create_doc');
   if (registerUpdateDocTool(api)) registered.push('feishu_update_doc');
   if (registered.length > 0) {
-    api.logger.info?.(`feishu_doc: Registered ${registered.join(', ')}`);
+    api.logger.debug?.(`feishu_doc: Registered ${registered.join(', ')}`);
   }
 }

@@ -6,6 +6,8 @@
  * 包含：MCP 客户端、类型定义、通用辅助函数
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
 import type { OpenClawPluginApi } from 'openclaw/plugin-sdk';
 import type { TSchema } from '@sinclair/typebox';
 import { createToolContext, formatToolResult, registerTool } from '../helpers';
@@ -13,8 +15,6 @@ import { handleInvokeErrorWithAutoAuth } from '../oapi/helpers';
 import { getUserAgent } from '../../core/version';
 import { mcpDomain } from '../../core/domains';
 import type { LarkBrand } from '../../core/types';
-import fs from 'node:fs';
-import path from 'node:path';
 
 // ---------------------------------------------------------------------------
 // 类型定义
@@ -61,7 +61,7 @@ export function sanitizeMarkdown(text: string): string {
 }
 
 export function isRecord(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null;
+  return typeof v === 'object' && v != null;
 }
 
 /**
@@ -118,7 +118,7 @@ export function unwrapJsonRpcResult(v: unknown): unknown {
 
 let mcpEndpointOverride: string | undefined;
 
-export function setMcpEndpointOverride(endpoint: string | undefined) {
+export function setMcpEndpointOverride(endpoint: string | undefined): void {
   mcpEndpointOverride = endpoint;
 }
 

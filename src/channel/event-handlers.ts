@@ -9,7 +9,7 @@
  * dependencies needed to process the event.
  */
 
-import type { FeishuMessageEvent, FeishuBotAddedEvent, FeishuReactionCreatedEvent } from '../messaging/types';
+import type { FeishuBotAddedEvent, FeishuMessageEvent, FeishuReactionCreatedEvent } from '../messaging/types';
 import { handleFeishuMessage } from '../messaging/inbound/handler';
 import { handleFeishuReaction, resolveReactionContext } from '../messaging/inbound/reaction-handler';
 import { isMessageExpired } from '../messaging/inbound/dedup';
@@ -17,7 +17,7 @@ import { withTicket } from '../core/lark-ticket';
 import { larkLogger } from '../core/lark-logger';
 import { handleCardAction } from '../tools/auto-auth';
 import { handleAskUserAction } from '../tools/ask-user-question';
-import { enqueueFeishuChatTask, buildQueueKey, hasActiveTask, getActiveDispatcher } from './chat-queue';
+import { buildQueueKey, enqueueFeishuChatTask, getActiveDispatcher, hasActiveTask } from './chat-queue';
 import { extractRawTextFromEvent, isLikelyAbortText } from './abort-detect';
 import type { MonitorContext } from './types';
 
@@ -65,7 +65,10 @@ export async function handleMessageEvent(ctx: MonitorContext, data: unknown): Pr
     const event = data as FeishuMessageEvent;
     const msgId = event.message?.message_id ?? 'unknown';
     const chatId = event.message?.chat_id ?? '';
-    const threadId = event.message?.thread_id || undefined;
+    // In topic groups, reply events carry root_id but not thread_id.
+    // Use root_id as fallback so different topics get separate queue keys
+    // and can be processed in parallel.
+    const threadId = event.message?.thread_id || event.message?.root_id || undefined;
 
     // Dedup — skip duplicate messages (e.g. from WebSocket reconnects).
     if (!ctx.messageDedup.tryRecord(msgId, accountId)) {

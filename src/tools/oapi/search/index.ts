@@ -14,7 +14,7 @@ import { registerFeishuSearchDocWikiTool } from './doc-search';
 /**
  * 注册所有 Search 工具
  */
-export function registerFeishuSearchTools(api: OpenClawPluginApi) {
+export function registerFeishuSearchTools(api: OpenClawPluginApi): void {
   if (!api.config) {
     api.logger.debug?.('feishu_search: No config available, skipping');
     return;
@@ -35,6 +35,6 @@ export function registerFeishuSearchTools(api: OpenClawPluginApi) {
 
   // 注册所有工具
   if (registerFeishuSearchDocWikiTool(api)) {
-    api.logger.info?.('feishu_search: Registered feishu_search_doc_wiki');
+    api.logger.debug?.('feishu_search: Registered feishu_search_doc_wiki');
   }
 }

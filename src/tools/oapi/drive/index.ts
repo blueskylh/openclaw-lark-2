@@ -16,7 +16,7 @@ import { registerDocMediaTool } from './doc-media';
 /**
  * 注册所有 Drive 工具
  */
-export function registerFeishuDriveTools(api: OpenClawPluginApi) {
+export function registerFeishuDriveTools(api: OpenClawPluginApi): void {
   if (!api.config) {
     api.logger.debug?.('feishu_drive: No config available, skipping');
     return;
@@ -40,6 +40,6 @@ export function registerFeishuDriveTools(api: OpenClawPluginApi) {
   if (registerDocCommentsTool(api)) registered.push('feishu_doc_comments');
   if (registerDocMediaTool(api)) registered.push('feishu_doc_media');
   if (registered.length > 0) {
-    api.logger.info?.(`feishu_drive: Registered ${registered.join(', ')}`);
+    api.logger.debug?.(`feishu_drive: Registered ${registered.join(', ')}`);
   }
 }

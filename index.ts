@@ -9,6 +9,7 @@
  */
 
 import type { OpenClawPluginApi } from 'openclaw/plugin-sdk';
+import { emptyPluginConfigSchema } from 'openclaw/plugin-sdk';
 import { feishuPlugin } from './src/channel/plugin';
 import { LarkClient } from './src/core/lark-client';
 import { registerOapiTools } from './src/tools/oapi/index';
@@ -17,25 +18,17 @@ import { registerFeishuOAuthTool } from './src/tools/oauth';
 import { registerFeishuOAuthBatchAuthTool } from './src/tools/oauth-batch-auth';
 import { registerAskUserQuestionTool } from './src/tools/ask-user-question';
 import {
-  runDiagnosis,
-  formatDiagReportCli,
-  traceByMessageId,
-  formatTraceOutput,
   analyzeTrace,
+  formatDiagReportCli,
+  formatTraceOutput,
+  runDiagnosis,
+  traceByMessageId,
 } from './src/commands/diagnose';
 import { registerCommands } from './src/commands/index';
 import { larkLogger } from './src/core/lark-logger';
 import { emitSecurityWarnings } from './src/core/security-check';
 
 const log = larkLogger('plugin');
-
-function emptyPluginConfigSchema(): Record<string, unknown> {
-  return {
-    type: 'object',
-    additionalProperties: false,
-    properties: {},
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Re-exports for external consumers
@@ -111,7 +104,7 @@ const plugin = {
   name: 'Feishu',
   description: 'Lark/Feishu channel plugin with im/doc/wiki/drive/task/calendar tools',
   configSchema: emptyPluginConfigSchema(),
-  register(api: OpenClawPluginApi) {
+  register(api: OpenClawPluginApi): void {
     LarkClient.setRuntime(api.runtime);
     api.registerChannel({ plugin: feishuPlugin });
 
@@ -132,13 +125,14 @@ const plugin = {
     // Register AskUserQuestion tool (interactive card-based user prompting)
     registerAskUserQuestionTool(api);
 
-    // ---- Tool call hooks (auto-trace AI tool invocations) ----
-
+    // ---- Tool call hooks (trace Feishu-owned tool invocations only) ----
     api.on('before_tool_call', (event) => {
+      if (!event.toolName.startsWith('feishu_')) return;
       log.info(`tool call: ${event.toolName} params=${JSON.stringify(event.params)}`);
     });
 
     api.on('after_tool_call', (event) => {
+      if (!event.toolName.startsWith('feishu_')) return;
       if (event.error) {
         log.error(`tool fail: ${event.toolName} ${event.error} (${event.durationMs ?? 0}ms)`);
       } else {

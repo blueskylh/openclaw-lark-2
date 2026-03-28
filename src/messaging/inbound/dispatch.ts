@@ -14,39 +14,39 @@
  * - dispatch-commands.ts — system command & permission notification
  */
 
-import type { RuntimeEnv } from 'openclaw/plugin-sdk';
+import type { ClawdbotConfig, RuntimeEnv  } from 'openclaw/plugin-sdk';
 import type { HistoryEntry } from 'openclaw/plugin-sdk/reply-history';
 import { clearHistoryEntriesIfEnabled } from 'openclaw/plugin-sdk/reply-history';
 import type { MessageContext } from '../types';
-import type { LarkAccount } from '../../core/types';
-import type { FeishuGroupConfig } from '../../core/types';
-import type { PermissionError } from './permission';
+import type { FeishuGroupConfig, LarkAccount  } from '../../core/types';
 import { larkLogger } from '../../core/lark-logger';
 import { ticketElapsed } from '../../core/lark-ticket';
 import { createFeishuReplyDispatcher } from '../../card/reply-dispatcher';
-import { mentionedBot } from './mention';
 import {
   buildQueueKey,
-  threadScopedKey,
   registerActiveDispatcher,
+  threadScopedKey,
   unregisterActiveDispatcher,
 } from '../../channel/chat-queue';
 import { isLikelyAbortText } from '../../channel/abort-detect';
-import { type DispatchContext, buildDispatchContext, resolveThreadSessionKey } from './dispatch-context';
-import {
-  buildMessageBody,
-  buildBodyForAgent,
-  buildInboundPayload,
-  buildEnvelopeWithHistory,
-} from './dispatch-builders';
-import { dispatchPermissionNotification, dispatchSystemCommand } from './dispatch-commands';
+import { isThreadCapableGroup } from '../../core/chat-info-cache';
 import { encodeFeishuRouteTarget } from '../../core/targets';
-import type { ClawdbotConfig } from 'openclaw/plugin-sdk';
-import { LarkClient } from '../../core/lark-client';
+import type { LarkClient } from '../../core/lark-client';
 import { runFeishuDoctorI18n } from '../../commands/doctor';
 import { runFeishuAuthI18n } from '../../commands/auth';
-import { runFeishuStartI18n, getFeishuHelpI18n } from '../../commands/index';
-import { sendCardFeishu, buildI18nMarkdownCard, sendMessageFeishu } from '../outbound/send';
+import { getFeishuHelpI18n, runFeishuStartI18n } from '../../commands/index';
+import { buildI18nMarkdownCard, sendCardFeishu, sendMessageFeishu } from '../outbound/send';
+import { dispatchPermissionNotification, dispatchSystemCommand } from './dispatch-commands';
+import {
+  buildBodyForAgent,
+  buildEnvelopeWithHistory,
+  buildInboundPayload,
+  buildMessageBody,
+} from './dispatch-builders';
+import { type DispatchContext, buildDispatchContext, resolveThreadSessionKey } from './dispatch-context';
+import type { PermissionError } from './permission';
+import { mentionedBot } from './mention';
+import { resolveRespondToMentionAll } from './gate';
 
 const log = larkLogger('inbound/dispatch');
 
@@ -85,6 +85,7 @@ async function dispatchNormalMessage(
   const { dispatcher, replyOptions, markDispatchIdle, markFullyComplete, abortCard } = createFeishuReplyDispatcher({
     cfg: dc.accountScopedCfg,
     agentId: dc.route.agentId,
+    sessionKey: dc.threadSessionKey ?? dc.route.sessionKey,
     chatId: dc.ctx.chatId,
     replyToMessageId: replyToMessageId ?? dc.ctx.messageId,
     accountId: dc.account.accountId,
@@ -178,6 +179,24 @@ export async function dispatchToAgent(params: {
   // 1. Derive shared context (including route resolution + system event)
   const dc = buildDispatchContext(params);
 
+  // 1a. Thread detection fallback for topic groups.
+  //     In topic groups (chat_mode=topic), reply events may carry root_id
+  //     without thread_id.  When threadSession is enabled, use root_id as
+  //     a synthetic threadId so replies stay inside the topic instead of
+  //     creating a new top-level message.
+  if (!dc.isThread && dc.isGroup && dc.ctx.rootId && dc.account.config?.threadSession === true) {
+    const threadCapable = await isThreadCapableGroup({
+      cfg: dc.accountScopedCfg,
+      chatId: dc.ctx.chatId,
+      accountId: dc.account.accountId,
+    });
+    if (threadCapable) {
+      log.info(`inferred thread from root_id=${dc.ctx.rootId} in topic group ${dc.ctx.chatId}`);
+      dc.isThread = true;
+      dc.ctx = { ...dc.ctx, threadId: dc.ctx.rootId };
+    }
+  }
+
   // 1b. Resolve thread session isolation (async: may query group info API)
   if (dc.isThread && dc.ctx.threadId) {
     dc.threadSessionKey = await resolveThreadSessionKey({
@@ -250,7 +269,14 @@ export async function dispatchToAgent(params: {
     senderName: params.ctx.senderName ?? params.ctx.senderId,
     senderId: params.ctx.senderId,
     messageSid: params.ctx.messageId,
-    wasMentioned: mentionedBot(params.ctx),
+    wasMentioned:
+      mentionedBot(params.ctx) ||
+      (params.ctx.mentionAll &&
+        resolveRespondToMentionAll({
+          groupConfig: params.groupConfig,
+          defaultConfig: params.defaultGroupConfig,
+          accountFeishuCfg: params.account.config,
+        })),
     replyToBody: params.quotedContent,
     inboundHistory,
     extraFields: {
@@ -325,7 +351,7 @@ export async function dispatchToAgent(params: {
   const skillFilter = dc.isGroup ? (params.groupConfig?.skills ?? params.defaultGroupConfig?.skills) : undefined;
 
   if (isCommand) {
-    await dispatchSystemCommand(dc, ctxPayload, isBareNewOrReset, params.replyToMessageId);
+    await dispatchSystemCommand(dc, ctxPayload, false, params.replyToMessageId);
     // /new and /reset explicitly start a new session — clear pending history
     if (isBareNewOrReset && dc.isGroup && historyKey && params.chatHistories) {
       clearHistoryEntriesIfEnabled({
