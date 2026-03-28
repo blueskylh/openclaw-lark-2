@@ -37,6 +37,52 @@
 
 ---
 
+## 安装说明
+
+### 环境要求
+
+- **Node.js**: `v22` 或更高版本
+- **OpenClaw**: 已安装并可运行（`npm install -g openclaw`）
+
+### 首次安装
+
+```bash
+# 1. 克隆仓库
+git clone https://github.com/blueskylh/openclaw-lark-2 ~/下载/openclaw-lark-2
+cd ~/下载/openclaw-lark-2
+
+# 2. 安装依赖并构建
+npm install --legacy-peer-deps
+npm run build
+
+# 3. 安装插件
+openclaw plugins install ~/下载/openclaw-lark-2
+
+# 4. 创建 openclaw 符号链接（解决 ESM 模块解析问题）
+ln -sf $(npm root -g)/openclaw ~/.openclaw/extensions/openclaw-lark/node_modules/openclaw
+
+# 5. 重启网关
+openclaw gateway restart
+```
+
+> **说明**：步骤 4 是必须的。由于 Node.js ESM 模块解析不会查找全局 `node_modules`，
+> 需要手动将全局安装的 `openclaw` 链接到插件目录，否则会报
+> `Cannot find package 'openclaw'` 错误。
+
+### 后续更新
+
+```bash
+cd ~/下载/openclaw-lark-2
+git pull
+npm install --legacy-peer-deps
+npm run build
+openclaw plugins install ~/下载/openclaw-lark-2
+ln -sf $(npm root -g)/openclaw ~/.openclaw/extensions/openclaw-lark/node_modules/openclaw
+openclaw gateway restart
+```
+
+---
+
 ## 更新日志
 
 ### 2026-03-23（个人增强版）
