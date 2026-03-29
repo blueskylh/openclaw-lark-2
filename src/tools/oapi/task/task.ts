@@ -108,6 +108,18 @@ const FeishuTaskTaskSchema = Type.Union([
         },
       ),
     ),
+    custom_fields: Type.Optional(
+      Type.Array(
+        Type.Object({
+          guid: Type.String({ description: '自定义字段 GUID' }),
+          value: Type.String({
+            description:
+              '字段值（JSON 字符串）。单选示例：{"option_value":{"option_guid":"xxx"}}；多选示例：{"multi_option_value":[{"option_guid":"xxx"}]}；文本示例：{"text_value":"内容"}；数字示例：{"number_value":"42"}',
+          }),
+        }),
+        { description: '自定义字段列表' },
+      ),
+    ),
     user_id_type: Type.Optional(
       StringEnum(['open_id', 'union_id', 'user_id']),
     ),
@@ -517,6 +529,21 @@ export function registerFeishuTaskTaskTool(api: OpenClawPluginApi): void {
               if (p.members) taskData.members = p.members;
               if (p.repeat_rule) taskData.repeat_rule = p.repeat_rule;
               if (p.tasklists) taskData.tasklists = p.tasklists;
+              if (p.custom_fields) {
+                // Convert custom_fields format from {guid, value} to {guid, ...fieldKeys}
+                taskData.custom_fields = p.custom_fields.map((field: any) => {
+                  const result: any = { guid: field.guid };
+                  try {
+                    const parsed = JSON.parse(field.value);
+                    // Merge parsed object directly (e.g., {single_select_value: "xxx"})
+                    Object.assign(result, parsed);
+                  } catch {
+                    // If not JSON, treat as plain text value
+                    result.text_value = field.value;
+                  }
+                  return result;
+                });
+              }
 
               const res = await client.invoke(
                 'feishu_task_task.create',
@@ -674,7 +701,21 @@ export function registerFeishuTaskTaskTool(api: OpenClawPluginApi): void {
 
               if (p.members) updateData.members = p.members;
               if (p.repeat_rule) updateData.repeat_rule = p.repeat_rule;
-              if (p.custom_fields) updateData.custom_fields = p.custom_fields;
+              if (p.custom_fields) {
+                // Convert custom_fields format from {guid, value} to {guid, ...fieldKeys}
+                updateData.custom_fields = p.custom_fields.map((field: any) => {
+                  const result: any = { guid: field.guid };
+                  try {
+                    const parsed = JSON.parse(field.value);
+                    // Merge parsed object directly (e.g., {single_select_value: "xxx"})
+                    Object.assign(result, parsed);
+                  } catch {
+                    // If not JSON, treat as plain text value
+                    result.text_value = field.value;
+                  }
+                  return result;
+                });
+              }
 
               // Build update_fields list (required by Task API)
               const updateFields = Object.keys(updateData);
